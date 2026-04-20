@@ -1,0 +1,36 @@
+services:
+  registryview:
+    image: baz1536/registryview:latest
+    container_name: RegistryView
+    hostname: dockerui.dbrose.uk
+    restart: unless-stopped
+
+    mem_limit: 128m
+
+    ports:
+      - "3544:3544"
+
+    environment:
+      TZ: Europe/London
+      PORT: 3544
+      NODE_ENV: production
+
+      AUTH_ENABLED: "true"
+      UI_USERNAME: admin
+      UI_PASSWORD: changeme
+      SHOW_ENVIRONMENT: "true"
+
+      SESSION_SECRET: 510f174d39afe8bec3838732b52d11bc34ad5075f7dc3bf33041ff8dcd93f3f7
+      ENCRYPTION_KEY: 9f30f4c70141b75cf394e18850570108613e033b1104b2db3fd6af7ee3d1d8ed
+
+      DATA_DIR: /app/data
+      LOG_DIR: /app/logs
+      LOG_LEVEL: info
+
+      # Optional: outbound proxy for reaching registries
+      # HTTPS_PROXY: http://proxy.internal:3128
+      # NO_PROXY: localhost,127.0.0.1,.internal
+
+    volumes:
+      - /opt/docker-volumes/registryview/data:/app/data
+      - /opt/docker-volumes/registryview/logs:/app/logs

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registries — RegistryView</title>
+    <link rel="stylesheet" href="/css/app.css">
+    <style>
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--accent-border);
+            border-radius: 10px;
+            padding: 24px;
+            margin-bottom: 24px;
+            display: none;
+        }
+        .panel.open { display: block; }
+        .panel-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .form-actions { display: flex; gap: 10px; margin-top: 4px; }
+        .col-actions { width: 200px; }
+        .action-btns { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: nowrap; }
+        .label-hint { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <nav id="main-nav"></nav>
+
+    <main>
+        <div class="toolbar">
+            <h1>Registries</h1>
+            <span class="toolbar-spacer"></span>
+            <button type="button" class="btn btn-primary" id="btn-add">+ Add Registry</button>
+        </div>
+
+        <div id="alert-area"></div>
+
+        <!-- Add / Edit form panel -->
+        <div class="panel" id="form-panel">
+            <div class="panel-title" id="form-title">Add Registry</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="f-name">Name</label>
+                    <input type="text" id="f-name" placeholder="My Registry">
+                </div>
+                <div class="form-group">
+                    <label for="f-url">Host</label>
+                    <input type="text" id="f-url" placeholder="docker.dbrose.uk or localhost:5000">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="f-username">Username</label>
+                    <input type="text" id="f-username" placeholder="(optional)">
+                </div>
+                <div class="form-group">
+                    <label for="f-password">Password</label>
+                    <input type="password" id="f-password" placeholder="(leave blank to keep existing)">
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-primary" id="btn-save">Save</button>
+                <button type="button" class="btn btn-ghost" id="btn-cancel">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Registry list -->
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Host</th>
+                        <th>Username</th>
+                        <th class="col-actions"><span class="sr-only">Actions</span></th>
+                    </tr>
+                </thead>
+                <tbody id="registry-list">
+                    <tr><td colspan="4" class="loading">Loading registries…</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <footer>Copyright &copy; <span id="year"></span> dBR Promotions. All rights reserved.</footer>
+
+    <script src="/js/app.js"></script>
+    <script src="/js/registries.js"></script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repositories — RegistryView</title>
+    <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+    <nav id="main-nav"></nav>
+
+    <main>
+        <div class="toolbar">
+            <div>
+                <h1>Repositories</h1>
+                <p class="registry-subtitle" id="registry-subtitle"></p>
+            </div>
+            <span class="toolbar-spacer"></span>
+            <select id="registry-select" class="registry-select">
+                <option value="">— Select a registry —</option>
+            </select>
+            <button type="button" class="btn btn-ghost" id="btn-refresh" title="Refresh" disabled>↻ Refresh</button>
+        </div>
+
+        <div id="alert-area"></div>
+
+        <div id="repos-card">
+            <p class="empty-state">Select a registry to browse repositories.</p>
+        </div>
+    </main>
+
+    <div class="delete-bar" id="delete-bar">
+        <span class="delete-bar-count" id="delete-count">0 tags selected</span>
+        <span class="toolbar-spacer"></span>
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-deselect-all">Deselect all</button>
+        <button type="button" class="btn btn-danger" id="btn-delete-selected">Delete selected</button>
+    </div>
+
+    <footer>Copyright &copy; <span id="year"></span> dBR Promotions. All rights reserved.</footer>
+
+    <script src="/js/app.js"></script>
+    <script src="/js/repositories.js"></script>
+</body>
+</html>
