@@ -15,11 +15,16 @@
             width: 100%;
             max-width: 380px;
         }
+        .login-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
         .login-title {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: 700;
             color: var(--text-heading);
-            margin-bottom: 6px;
         }
         .login-sub {
             font-size: 13px;
@@ -31,8 +36,11 @@
 </head>
 <body>
     <div class="login-card">
-        <div class="login-title">RegistryView</div>
-        <div class="login-sub">Sign in to continue</div>
+        <div class="login-brand">
+            <img src="/images/logo.svg" alt="" width="36" height="36">
+            <div class="login-title">RegistryView</div>
+        </div>
+        <div class="login-sub">Sign in with your RegistryView credentials to access your registries</div>
 
         <div id="alert-area"></div>
 
