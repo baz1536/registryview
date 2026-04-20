@@ -5,3 +5,4 @@ node_modules/
 logs/
 !logs/.gitkeep
 .DS_Store
+DockerCompose/
