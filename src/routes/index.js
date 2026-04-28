@@ -39,7 +39,7 @@ router.get('/about', async (_req, res) => {
         }
 
         const resolvedDeps = resolvedVersions(pkg.dependencies);
-        const resolvedDevDeps = resolvedVersions(pkg.devDependencies);
+        const _resolvedDevDeps = resolvedVersions(pkg.devDependencies);
 
         const nodeVersion = process.version;
         let npmVersion = 'Unknown';

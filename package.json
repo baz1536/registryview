@@ -5,7 +5,11 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node --env-file=.env src/server.js",
-    "dev": "nodemon --env-file=.env src/server.js"
+    "dev": "nodemon --env-file=.env src/server.js",
+    "lint": "npm run lint:js && npm run lint:css && npm run lint:html",
+    "lint:js": "eslint src/**/*.js public/js/**/*.js",
+    "lint:css": "stylelint \"public/css/**/*.css\"",
+    "lint:html": "htmlhint \"public/**/*.html\""
   },
   "keywords": [],
   "author": "",
@@ -20,6 +24,12 @@
     "winston": "^3.19.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.2.1",
+    "eslint-plugin-n": "^17.24.0",
+    "htmlhint": "^1.9.2",
+    "nodemon": "^3.1.14",
+    "stylelint": "^17.9.1",
+    "stylelint-config-standard": "^40.0.0"
   }
 }
