@@ -15,5 +15,6 @@ logs/
 Dockerfile
 DockerCompose/
 README.md
+DOCKERHUB.md
 .claude/
 .claude.deploy.env
