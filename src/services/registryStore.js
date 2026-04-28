@@ -58,7 +58,7 @@ function decryptRegistry(reg) {
 }
 
 function redact(reg) {
-    const { password, ...safe } = reg;
+    const { password: _password, ...safe } = reg;
     return safe;
 }
 
