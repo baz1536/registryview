@@ -31,15 +31,12 @@ services:
       SESSION_SECRET: change-me-to-a-long-random-string
       ENCRYPTION_KEY: change-me-to-a-long-random-string
     volumes:
-      - /opt/docker-volumes/registryview/data:/app/data
-      - /opt/docker-volumes/registryview/logs:/app/logs
-```
+      - registryview_data:/app/data
+      - registryview_logs:/app/logs
 
-Create the host directories before first run:
-
-```bash
-mkdir -p /opt/docker-volumes/registryview/data
-mkdir -p /opt/docker-volumes/registryview/logs
+volumes:
+  registryview_data:
+  registryview_logs:
 ```
 
 Then open `http://localhost:3544` in your browser and add your first registry.
@@ -147,8 +144,12 @@ services:
       # NO_PROXY: localhost,127.0.0.1,.internal
 
     volumes:
-      - /opt/docker-volumes/registryview/data:/app/data
-      - /opt/docker-volumes/registryview/logs:/app/logs
+      - registryview_data:/app/data
+      - registryview_logs:/app/logs
+
+volumes:
+  registryview_data:
+  registryview_logs:
 ```
 
 ---

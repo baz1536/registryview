@@ -8,3 +8,4 @@ logs/
 DockerCompose/
 .vscode/
 lint-first-run.md
+DOCKERHUB.md
