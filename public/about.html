@@ -32,17 +32,28 @@
                 </div>
                 <div class="info-accordion-body">
                     <p>Deleting tags via RegistryView removes the manifest references, but the underlying image layers remain on disk until garbage collection is run on the registry host.</p>
-                    <p>⚠️ <strong>Warning:</strong> The paths below are specific to your environment. Using incorrect paths could target the wrong data. Double-check the volume path matches your registry setup before running.</p>
+                    <p>⚠️ <strong>Warning:</strong> The paths below are specific to your environment. Using incorrect paths could target the wrong data. Double-check the volume name or path matches your registry setup before running.</p>
                     <p>Stop the registry first, run garbage collection using a temporary container against the same data volume, then restart:</p>
+                    <p><strong>registry:3</strong></p>
                     <pre class="code-block">docker stop registry
 
 docker run --rm \
-  -v /opt/docker-volumes/registry/data:/var/lib/registry \
+  -v registry_data:/var/lib/registry \
+  registry:3 garbage-collect \
+  /etc/distribution/config.yml
+
+docker start registry</pre>
+                    <p><strong>registry:2</strong></p>
+                    <pre class="code-block">docker stop registry
+
+docker run --rm \
+  -v registry_data:/var/lib/registry \
   registry:2 garbage-collect \
   /etc/docker/registry/config.yml
 
 docker start registry</pre>
-                    <p>Replace <code>/opt/docker-volumes/registry/data</code> with the path to your registry's data volume. The registry container must be stopped before running garbage collection.</p>
+                    <p>Replace <code>registry_data</code> with your volume name or the host path to your registry's data directory. The registry container must be stopped before running garbage collection.</p>
+                    <p>Add <code>--delete-untagged</code> before the config path to also remove layers belonging to untagged images. Run with <code>--dry-run</code> first to preview what will be deleted.</p>
                 </div>
             </div>
         </div>
