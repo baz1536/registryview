@@ -2,7 +2,7 @@
 
 A self-hosted Docker Registry browser. Browse, inspect, and delete images and tags across multiple private registries from a single dark-themed UI.
 
-> **Note:** RegistryView is a companion UI for the [official Docker Registry image](https://hub.docker.com/_/registry) (`registry:2`). It does not include a registry — you need to be running your own private registry for RegistryView to connect to.
+> **Note:** RegistryView is a companion UI for the [official Docker Registry image](https://hub.docker.com/_/registry) (`registry:3`, also compatible with `registry:2`). It does not include a registry — you need to be running your own private registry for RegistryView to connect to.
 
 ## Features
 
@@ -156,6 +156,7 @@ volumes:
 
 ## Notes
 
+- **Registry v3** — RegistryView works with both `registry:2` and `registry:3`. The HTTP API is unchanged (`/v2/`). If running `registry:3`, note the garbage collection config path changed to `/etc/distribution/config.yml` (see the Maintenance section in the RegistryView About page for commands).
 - **Registry URL format** — enter hostnames only, without scheme: `docker.example.com` or `localhost:5000`. RegistryView will use `https://` for remote hosts and `http://` for localhost/IP addresses automatically.
 - **Deleting images** — deletion requires the registry to have `REGISTRY_STORAGE_DELETE_ENABLED=true` set. This is off by default in the official Docker Registry image.
 - **Empty repositories** — Docker Registry v2 has no API to remove repository entries from the catalog. Repos with 0 tags will remain listed until removed from the registry's storage backend directly.
