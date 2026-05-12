@@ -325,6 +325,13 @@ input[type="checkbox"] {
     color: var(--accent);
 }
 
+.alert-warning {
+    background: rgba(210, 153, 34, 0.12);
+    border: 1px solid rgba(210, 153, 34, 0.35);
+    color: #d29922;
+    display: block;
+}
+
 /* ===== Loading / empty states ===== */
 .loading, .empty-state {
     color: var(--text-muted);

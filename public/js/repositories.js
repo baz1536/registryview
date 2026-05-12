@@ -4,7 +4,8 @@ initNav('repositories');
 const state = {
     registryId: null,
     repos: {},       // { repoName: { tags: [], open: bool, tagCount: null } }
-    selected: {}     // { 'repoName::tag': true }
+    selected: {},    // { 'repoName::tag': true }
+    deletionEnabled: true
 };
 
 // ===== Registry selector =====
@@ -40,7 +41,7 @@ document.getElementById('registry-select').addEventListener('change', (e) => {
     state.registryId = e.target.value || null;
     state.repos = {};
     state.selected = {};
-    updateDeleteBar();
+    setDeletionEnabled(true);
     document.getElementById('btn-refresh').disabled = !state.registryId;
     if (state.registryId) loadCatalog();
     else renderEmptyCard('Select a registry to browse repositories.');
@@ -54,6 +55,29 @@ document.getElementById('btn-refresh').addEventListener('click', () => {
         loadCatalog();
     }
 });
+
+// ===== Deletion state =====
+
+function setDeletionEnabled(enabled) {
+    if (state.deletionEnabled === enabled) return;
+    state.deletionEnabled = enabled;
+    const alertArea = document.getElementById('alert-area');
+    const existingWarning = document.getElementById('deletion-disabled-warning');
+    if (existingWarning) existingWarning.remove();
+    if (!enabled) {
+        const warning = document.createElement('div');
+        warning.id = 'deletion-disabled-warning';
+        warning.className = 'alert alert-warning';
+        warning.innerHTML = '⚠️ <strong>Deletion is disabled on this registry.</strong> Set <code>REGISTRY_STORAGE_DELETE_ENABLED=true</code> on your registry to enable tag and image deletion.';
+        alertArea.appendChild(warning);
+        // Remove delete controls from DOM immediately
+        document.querySelectorAll('.repo-delete-btn').forEach(btn => btn.remove());
+        Object.keys(state.repos).forEach(name => {
+            if (state.repos[name].open) renderTags(name);
+        });
+    }
+    updateDeleteBar();
+}
 
 // ===== Catalog =====
 
@@ -70,7 +94,9 @@ async function loadCatalog() {
         return;
     }
 
-    const { repositories } = await res.json();
+    const { repositories, deletionEnabled } = await res.json();
+    setDeletionEnabled(deletionEnabled !== false);
+
     if (!repositories || !repositories.length) {
         card.innerHTML = '<p class="empty-state">No repositories found in this registry.</p>';
         return;
@@ -105,7 +131,7 @@ function repoAccordionHtml(name) {
                 <span class="repo-toggle-icon ${repo.open ? 'open' : ''}" id="toggle-${safeId}" onclick="toggleRepo('${escapeHtml(name)}')">▶</span>
                 <span class="repo-accordion-name" onclick="toggleRepo('${escapeHtml(name)}')">${escapeHtml(name)}</span>
                 <span class="repo-tag-pill" id="tagpill-${safeId}">${tagLabel}</span>
-                <button type="button" class="btn btn-danger btn-sm repo-delete-btn" onclick="deleteImage('${escapeHtml(name)}')" title="Delete image">Delete image</button>
+                ${state.deletionEnabled ? `<button type="button" class="btn btn-danger btn-sm repo-delete-btn" onclick="deleteImage('${escapeHtml(name)}')" title="Delete image">Delete image</button>` : ''}
             </div>
             <div class="repo-accordion-body ${repo.open ? 'open' : ''}" id="body-${safeId}">
                 <div class="repo-tags-inner" id="tags-${safeId}">
@@ -202,12 +228,13 @@ function renderTags(name) {
 
     const archs = state.repos[name].archs || {};
     inner.innerHTML = `
+        ${state.deletionEnabled ? `
         <div class="tag-select-all">
             <label class="tag-label">
                 <input type="checkbox" id="selectall-${safeId}" onchange="toggleSelectAll('${escapeHtml(name)}', this.checked)">
                 Select all ${tags.length} tags
             </label>
-        </div>
+        </div>` : ''}
         <div class="tag-list">
             ${tags.map(tag => {
                 const key = `${name}::${tag}`;
@@ -218,7 +245,7 @@ function renderTags(name) {
                 return `
                     <div class="tag-item">
                         <label class="tag-label">
-                            <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleTag('${escapeHtml(name)}', '${escapeHtml(tag)}', this.checked)">
+                            ${state.deletionEnabled ? `<input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleTag('${escapeHtml(name)}', '${escapeHtml(tag)}', this.checked)">` : ''}
                             <span class="tag-name">${escapeHtml(tag)}</span>
                             <span class="arch-badges" id="archs-${tagSafeId}">${badgesHtml}</span>
                         </label>
@@ -297,6 +324,10 @@ async function deleteImage(name) {
     const hasDeleted = result.deleted && result.deleted.length;
     const hasErrors = result.errors && result.errors.length;
 
+    if (hasErrors && (result.errors || []).some(e => e.error && e.error.includes('REGISTRY_STORAGE_DELETE_ENABLED'))) {
+        setDeletionEnabled(false);
+    }
+
     if (hasErrors && !hasDeleted) {
         showAlert('alert-area', `Could not delete "${name}": ${result.errors.map(e => e.error).join('; ')}`);
         if (btn) { btn.disabled = false; btn.textContent = 'Delete image'; }
@@ -358,7 +389,7 @@ function updateDeleteBar() {
     const count = Object.keys(state.selected).length;
     const bar = document.getElementById('delete-bar');
     const countEl = document.getElementById('delete-count');
-    bar.className = count > 0 ? 'delete-bar visible' : 'delete-bar';
+    bar.className = (count > 0 && state.deletionEnabled) ? 'delete-bar visible' : 'delete-bar';
     countEl.textContent = `${count} tag${count !== 1 ? 's' : ''} selected`;
 }
 
@@ -410,6 +441,9 @@ document.getElementById('btn-delete-selected').addEventListener('click', async (
         const result = await res.json();
         allDeleted.push(...(result.deleted || []).map(t => `${repo}::${t}`));
         allErrors.push(...(result.errors || []).map(e => `${repo}:${e.tag} — ${e.error}`));
+        if ((result.errors || []).some(e => e.error && e.error.includes('REGISTRY_STORAGE_DELETE_ENABLED'))) {
+            setDeletionEnabled(false);
+        }
     }
 
     allDeleted.forEach(key => {

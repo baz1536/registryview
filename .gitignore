@@ -8,4 +8,5 @@ logs/
 DockerCompose/
 .vscode/
 lint-first-run.md
+gc-buddy.sh
 DOCKERHUB.md
