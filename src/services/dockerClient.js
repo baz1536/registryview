@@ -88,6 +88,9 @@ async function deleteManifest(registry, repoName, digest) {
     const res = await registryRequest(registry, `/v2/${repoName}/manifests/${digest}`, {
         method: 'DELETE'
     });
+    if (res.status === 405) {
+        throw new Error('Deletion is disabled on this registry. Set REGISTRY_STORAGE_DELETE_ENABLED=true to enable it.');
+    }
     if (res.status !== 202 && res.status !== 200) {
         throw new Error(`Delete failed: ${res.status} ${res.statusText}`);
     }
@@ -165,6 +168,21 @@ async function getArchitectures(registry, repoName, tag) {
     return [];
 }
 
+async function checkDeletionEnabled(registry, repoName) {
+    try {
+        // Use a known-nonexistent digest against a real repo path.
+        // 405 = deletion disabled by registry config.
+        // 404 = deletion enabled (repo or digest not found, but method is allowed).
+        const repo = repoName || '_probe';
+        const res = await registryRequest(registry, `/v2/${repo}/manifests/sha256:0000000000000000000000000000000000000000000000000000000000000000`, {
+            method: 'DELETE'
+        });
+        return res.status !== 405;
+    } catch {
+        return true;
+    }
+}
+
 async function testConnection(registry) {
     try {
         const res = await registryRequest(registry, '/v2/');
@@ -176,4 +194,4 @@ async function testConnection(registry) {
     }
 }
 
-module.exports = { getCatalog, getTags, getDigest, deleteManifest, deleteTags, testConnection, getArchitectures };
+module.exports = { getCatalog, getTags, getDigest, deleteManifest, deleteTags, testConnection, getArchitectures, checkDeletionEnabled };

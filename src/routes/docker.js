@@ -19,6 +19,8 @@ router.get('/:registryId/catalog', async (req, res) => {
     if (!registry) return;
     try {
         const { repositories } = await docker.getCatalog(registry);
+        const firstRepo = (repositories || [])[0];
+        const deletionEnabled = await docker.checkDeletionEnabled(registry, firstRepo);
         const withCounts = await Promise.all(
             (repositories || []).map(async name => {
                 try {
@@ -29,7 +31,7 @@ router.get('/:registryId/catalog', async (req, res) => {
                 }
             })
         );
-        res.json({ repositories: withCounts });
+        res.json({ repositories: withCounts, deletionEnabled });
     } catch (err) {
         logger.error('Catalog error:', err.message);
         res.status(502).json({ error: err.message });

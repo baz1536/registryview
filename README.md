@@ -112,11 +112,22 @@ If your registries are only reachable via an HTTP/HTTPS proxy:
 
 ```yaml
 services:
+  registry:
+    image: registry:latest
+    container_name: registry
+    restart: unless-stopped
+    environment:
+      REGISTRY_STORAGE_DELETE_ENABLED: "true"
+    volumes:
+      - registry_storage:/var/lib/registry
+
   registryview:
     image: baz1536/registryview:latest
     container_name: registryview
     hostname: registryview
     restart: unless-stopped
+    depends_on:
+      - registry
     mem_limit: 256m
     ports:
       - "3544:3544"
@@ -148,6 +159,7 @@ services:
       - registryview_logs:/app/logs
 
 volumes:
+  registry_storage:
   registryview_data:
   registryview_logs:
 ```
