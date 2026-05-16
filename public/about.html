@@ -4,87 +4,122 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About — RegistryView</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="stylesheet" href="/css/app.css">
 </head>
 <body>
     <nav id="main-nav"></nav>
 
     <main>
-        <div class="toolbar">
-            <h1>About</h1>
+        <div class="page-header">
+            <div>
+                <h1>About</h1>
+                <p><span class="about-hero-registry">Registry</span><span class="about-hero-view">View</span> — Browse your private Docker registries</p>
+            </div>
         </div>
 
-        <div class="card" id="appCard">
+        <!-- Hero -->
+        <div class="about-hero card">
+            <div class="about-hero-wordmark">
+                <span class="about-hero-registry">Registry</span><span class="about-hero-view">View</span>
+            </div>
+            <p class="about-hero-slogan">Browse your private Docker registries</p>
+            <p class="about-hero-desc">RegistryView is a self-hosted web UI for browsing private Docker registries. View repositories, inspect tags, and delete images — all from a clean, secure interface.</p>
+        </div>
+
+        <!-- Key concepts -->
+        <div class="about-concepts-grid">
+            <div class="card about-concept">
+                <div class="about-concept-icon">🗂️</div>
+                <h3>Repositories</h3>
+                <p>Browse all images in your connected registries. Expand any repository to inspect its tags, image digests, and layer sizes.</p>
+            </div>
+            <div class="card about-concept">
+                <div class="about-concept-icon">🔒</div>
+                <h3>Registries</h3>
+                <p>Connect multiple private Docker registries. Credentials are stored encrypted at rest using AES-256-GCM with a per-installation random salt.</p>
+            </div>
+            <div class="card about-concept">
+                <div class="about-concept-icon">🗑️</div>
+                <h3>Delete Tags</h3>
+                <p>Select one or more tags and delete them via the registry API. Deletion must be enabled on the registry host. Run garbage collection afterwards to reclaim disk space.</p>
+            </div>
+            <div class="card about-concept">
+                <div class="about-concept-icon">🧹</div>
+                <h3>Garbage Collection</h3>
+                <p>Deleting tags removes manifest references but not the underlying layers. Stop the registry, run <code>garbage-collect</code> with a temporary container, then restart to reclaim disk space.</p>
+            </div>
+        </div>
+
+        <!-- Technical info (loaded dynamically) -->
+        <div id="about-info">
             <p class="loading"><span class="spinner"></span> Loading…</p>
         </div>
 
-        <div class="card" id="envCard" hidden>
-            <h2>Environment</h2>
-            <div id="envContent"></div>
-        </div>
-
-        <div class="card">
-            <h2>Maintenance</h2>
+        <!-- Maintenance -->
+        <div class="card about-section">
+            <h2 class="about-section-title">Garbage Collection</h2>
             <div class="info-accordion">
                 <div class="info-accordion-header">
-                    Garbage Collection — reclaim disk space after deleting tags
+                    registry:latest (v3) — reclaim disk space after deleting tags
                     <span class="info-accordion-chevron">▼</span>
                 </div>
                 <div class="info-accordion-body">
-                    <p>Deleting tags via RegistryView removes the manifest references, but the underlying image layers remain on disk until garbage collection is run on the registry host.</p>
-                    <p>⚠️ <strong>Warning:</strong> The paths below are specific to your environment. Using incorrect paths could target the wrong data. Double-check the volume name or path matches your registry setup before running.</p>
-                    <p>Stop the registry first, run garbage collection using a temporary container against the same data volume, then restart:</p>
-                    <p><strong>registry:3</strong></p>
+                    <p>Stop the registry, run garbage collection using a temporary container against the same data volume, then restart. Replace <code>/path/to/registry/data</code> with your volume name or host path.</p>
                     <pre class="code-block">docker stop registry
 
 docker run --rm \
-  -v registry_data:/var/lib/registry \
-  registry:3 garbage-collect \
+  -v /path/to/registry/data:/var/lib/registry \
+  registry:latest garbage-collect \
+  --delete-untagged \
   /etc/distribution/config.yml
 
 docker start registry</pre>
-                    <p><strong>registry:2</strong></p>
+                    <p>Run with <code>--dry-run</code> added before the config path to preview what will be deleted without making any changes.</p>
+                </div>
+            </div>
+            <div class="info-accordion">
+                <div class="info-accordion-header">
+                    registry:2 — legacy registry garbage collection
+                    <span class="info-accordion-chevron">▼</span>
+                </div>
+                <div class="info-accordion-body">
+                    <p>registry:2 uses a different entrypoint and config path. The <code>--delete-untagged</code> flag is not supported on v2.</p>
                     <pre class="code-block">docker stop registry
 
 docker run --rm \
-  -v registry_data:/var/lib/registry \
-  registry:2 garbage-collect \
+  -v /path/to/registry/data:/var/lib/registry \
+  registry:2 \
+  garbage-collect \
   /etc/docker/registry/config.yml
 
 docker start registry</pre>
-                    <p>Replace <code>registry_data</code> with your volume name or the host path to your registry's data directory. The registry container must be stopped before running garbage collection.</p>
-                    <p>Add <code>--delete-untagged</code> before the config path to also remove layers belonging to untagged images. Run with <code>--dry-run</code> first to preview what will be deleted.</p>
                 </div>
             </div>
         </div>
 
-        <div class="card" id="depsCard" hidden>
-            <h2>Dependencies</h2>
-            <div id="depsContent"></div>
-        </div>
-
-        <div class="card">
-            <h2>Third-Party Licenses</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Package</th>
-                        <th>License</th>
-                        <th>Copyright</th>
-                    </tr>
-                </thead>
+        <!-- Licenses -->
+        <div class="card about-licenses-card">
+            <h2 class="about-tech-title">Third-Party Licenses</h2>
+            <p class="about-licenses-intro">RegistryView is built on open source software. The following packages are included:</p>
+            <table class="about-deps-table">
+                <thead><tr><td>Package</td><td>License</td><td>Copyright</td></tr></thead>
                 <tbody>
                     <tr><td>express</td><td>MIT</td><td>TJ Holowaychuk</td></tr>
-                    <tr><td>winston</td><td>MIT</td><td>Charlie Robbins</td></tr>
+                    <tr><td>express-rate-limit</td><td>MIT</td><td>Nathan Friedly</td></tr>
                     <tr><td>express-session</td><td>MIT</td><td>TJ Holowaychuk</td></tr>
+                    <tr><td>helmet</td><td>MIT</td><td>Adam Baldwin</td></tr>
                     <tr><td>uuid</td><td>MIT</td><td>Robert Kieffer</td></tr>
+                    <tr><td>winston</td><td>MIT</td><td>Charlie Robbins</td></tr>
                 </tbody>
             </table>
-            <p class="license-note">All other dependencies are licensed under MIT, ISC, BSD, or similarly permissive licenses.</p>
+            <p class="about-licenses-note">All other dependencies are licensed under MIT, ISC, BSD, or similarly permissive licenses.</p>
+        </div>
+
+        <div class="about-copyright">
+            <p>Copyright &copy; <span id="year"></span> dBR Promotions. All rights reserved.</p>
         </div>
     </main>
-
-    <footer>Copyright &copy; <span id="year"></span> dBR Promotions. All rights reserved.</footer>
 
     <script src="/js/app.js"></script>
     <script src="/js/about.js"></script>

@@ -1,50 +1,74 @@
-document.getElementById('year').textContent = new Date().getFullYear();
+document.getElementById('year') && (document.getElementById('year').textContent = new Date().getFullYear());
 initNav('about');
 
-function row(key, val) {
-    return `<div class="about-row"><span class="about-key">${key}</span><span class="about-val">${val}</span></div>`;
-}
-
 async function loadAboutInfo() {
+    const infoEl = document.getElementById('about-info');
+    if (!infoEl) return;
+
     try {
         const info = await fetch('/api/about').then(r => r.json());
         const env = info.environment || {};
 
-        let appHtml = '<h2>Application</h2>';
-        appHtml += row('Version', `<span class="badge">v${escapeHtml(info.version)}</span>`);
-        if (info.description) appHtml += row('Description', escapeHtml(info.description));
-        appHtml += row('Node.js', escapeHtml(info.nodeVersion || 'Unknown'));
-        appHtml += row('npm', escapeHtml(info.npmVersion || 'Unknown'));
-        if (info.gitBranch && info.gitBranch !== 'main' && info.gitBranch !== 'master') {
-            appHtml += row('Git Branch', escapeHtml(info.gitBranch));
-        }
-        document.getElementById('appCard').innerHTML = appHtml;
+        const html = `
+        <div class="about-tech-grid">
+            <div class="card about-tech-card">
+                <h2 class="about-tech-title">Application</h2>
+                <div class="about-kv">
+                    <span class="about-k">Version</span>
+                    <span class="about-v"><span class="badge">v${escapeHtml(info.version)}</span></span>
+                </div>
+                <div class="about-kv">
+                    <span class="about-k">Node.js</span>
+                    <span class="about-v">${escapeHtml(info.nodeVersion || 'Unknown')}</span>
+                </div>
+                <div class="about-kv">
+                    <span class="about-k">npm</span>
+                    <span class="about-v">${escapeHtml(info.npmVersion || 'Unknown')}</span>
+                </div>
+                ${info.gitBranch && info.gitBranch !== 'main' && info.gitBranch !== 'master' ? `
+                <div class="about-kv">
+                    <span class="about-k">Git branch</span>
+                    <span class="about-v"><code>${escapeHtml(info.gitBranch)}</code></span>
+                </div>` : ''}
+            </div>
 
-        if (info.showEnvironment !== false) {
-            let envHtml = '';
-            envHtml += row('Hostname', escapeHtml(env.hostname || 'Unknown'));
-            envHtml += row('Address', env.ipAddresses && env.ipAddresses.length
-                ? env.ipAddresses.map(ip => escapeHtml(`${ip}:${env.port}`)).join(', ')
-                : escapeHtml(`localhost:${env.port || ''}`));
-            envHtml += row('Operating System', escapeHtml(env.os || 'Unknown'));
-            if (env.distro) envHtml += row('Distribution', escapeHtml(env.distro));
-            envHtml += row('Architecture', escapeHtml(env.architecture || 'Unknown'));
-            envHtml += row('Docker', env.isDocker ? 'Yes' : 'No');
-            document.getElementById('envContent').innerHTML = envHtml;
-            document.getElementById('envCard').removeAttribute('hidden');
-        }
+            <div class="card about-tech-card">
+                <h2 class="about-tech-title">Environment</h2>
+                <div class="about-kv">
+                    <span class="about-k">Hostname</span>
+                    <span class="about-v">${escapeHtml(env.hostname || 'Unknown')}</span>
+                </div>
+                <div class="about-kv">
+                    <span class="about-k">Address</span>
+                    <span class="about-v">${escapeHtml(
+                        env.ipAddresses && env.ipAddresses.length
+                            ? env.ipAddresses.map(ip => `${ip}:${env.port}`).join(', ')
+                            : `localhost:${env.port || ''}`
+                    )}</span>
+                </div>
+                <div class="about-kv">
+                    <span class="about-k">OS</span>
+                    <span class="about-v">${escapeHtml(env.distro || env.os || 'Unknown')}</span>
+                </div>
+                <div class="about-kv">
+                    <span class="about-k">Architecture</span>
+                    <span class="about-v">${escapeHtml(env.architecture || 'Unknown')}</span>
+                </div>
+                <div class="about-kv">
+                    <span class="about-k">Docker</span>
+                    <span class="about-v">${env.isDocker
+                        ? '<span class="badge badge-success">Yes</span>'
+                        : '<span class="badge badge-muted">No</span>'
+                    }</span>
+                </div>
+            </div>
+        </div>
 
-        if (info.dependencies && Object.keys(info.dependencies).length) {
-            let html = '<table><thead><tr><th>Package</th><th>Version</th></tr></thead><tbody>';
-            Object.entries(info.dependencies).sort().forEach(([pkg, ver]) => {
-                html += `<tr><td>${escapeHtml(pkg)}</td><td>${escapeHtml(ver)}</td></tr>`;
-            });
-            html += '</tbody></table>';
-            document.getElementById('depsContent').innerHTML = html;
-            document.getElementById('depsCard').removeAttribute('hidden');
-        }
+        `;
+
+        infoEl.innerHTML = html;
     } catch {
-        document.getElementById('appCard').innerHTML = '<p class="empty-state">Failed to load application information.</p>';
+        infoEl.innerHTML = '<p class="empty-state">Failed to load application information.</p>';
     }
 }
 

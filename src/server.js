@@ -19,6 +19,8 @@ store.initialise();
 const app = express();
 const DEFAULT_PORT = 3544;
 
+app.set('trust proxy', 1);
+
 const isProduction = process.env.NODE_ENV === 'production';
 app.use(helmet({
     contentSecurityPolicy: {
@@ -55,10 +57,11 @@ app.use(session({
 app.use('/', authRoutes);
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
-// Serve static assets (css, js, images) publicly
+// Serve static assets (css, js, images, favicon) publicly
 app.use('/css', express.static(path.join(__dirname, '../public/css')));
 app.use('/js', express.static(path.join(__dirname, '../public/js')));
 app.use('/images', express.static(path.join(__dirname, '../public/images')));
+app.get('/favicon.svg', (req, res) => res.sendFile('favicon.svg', { root: 'public' }));
 
 // Protected HTML pages
 app.get('/', requireAuth, (req, res) => res.redirect('/repositories.html'));

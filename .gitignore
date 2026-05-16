@@ -9,5 +9,6 @@ DockerCompose/
 .vscode/
 lint-first-run.md
 gc-buddy.sh
+gc_buddy_logs/
 DOCKERHUB.md
 security-review.md

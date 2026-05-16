@@ -8,13 +8,13 @@ function initNav(activePage) {
         nav.innerHTML = `
             <a href="/repositories.html" class="nav-brand">
                 <img src="/images/logo.svg" alt="" width="32" height="32">
-                RegistryView
+                <span><span class="nav-brand-registry">Registry</span><span class="nav-brand-view">View</span></span>
             </a>
             <a href="/repositories.html" class="nav-link ${activePage === 'repositories' ? 'active' : ''}">Repositories</a>
             <a href="/registries.html" class="nav-link ${activePage === 'registries' ? 'active' : ''}">Registries</a>
             <a href="/about.html" class="nav-link ${activePage === 'about' ? 'active' : ''}">About</a>
             <span class="nav-spacer"></span>
-            ${authEnabled ? `<form method="POST" action="/logout" style="margin:0"><button type="submit" class="nav-logout">Sign out</button></form>` : ''}
+            ${authEnabled ? `<form method="POST" action="/logout" class="nav-logout-form"><button type="submit" class="nav-logout">Sign out</button></form>` : ''}
         `;
     }
 
@@ -85,7 +85,7 @@ function _ensureModal() {
                 <h3 class="modal-title" id="modal-title"></h3>
             </div>
             <p class="modal-body" id="modal-body"></p>
-            <div class="modal-confirm-input" id="modal-confirm-input-wrap" style="display:none; margin-bottom:18px;">
+            <div class="modal-confirm-input hidden" id="modal-confirm-input-wrap">
                 <label class="modal-confirm-label" for="modal-confirm-input">Type <strong>DELETE</strong> to confirm</label>
                 <input type="text" id="modal-confirm-input" class="modal-confirm-field" autocomplete="off" spellcheck="false" placeholder="DELETE">
             </div>
@@ -136,12 +136,12 @@ function showConfirm({ title, body, confirmText = 'Delete', icon = '🗑️', re
     const input = document.getElementById('modal-confirm-input');
 
     if (requireWord) {
-        inputWrap.style.display = 'block';
+        inputWrap.classList.remove('hidden');
         confirmBtn.disabled = true;
         input.value = '';
         setTimeout(() => input.focus(), 50);
     } else {
-        inputWrap.style.display = 'none';
+        inputWrap.classList.add('hidden');
         confirmBtn.disabled = false;
     }
 
