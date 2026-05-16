@@ -38,10 +38,17 @@ function showAlert(containerId, message, type = 'error') {
     if (!el) return;
     const div = document.createElement('div');
     div.className = `alert alert-${type}`;
-    div.innerHTML = `
-        <span class="alert-message">${escapeHtml(message)}</span>
-        <button type="button" class="alert-close" onclick="this.parentElement.remove()" aria-label="Dismiss">&times;</button>
-    `;
+    const msgSpan = document.createElement('span');
+    msgSpan.className = 'alert-message';
+    msgSpan.textContent = message;
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'alert-close';
+    closeBtn.setAttribute('aria-label', 'Dismiss');
+    closeBtn.textContent = '×';
+    closeBtn.addEventListener('click', () => div.remove());
+    div.appendChild(msgSpan);
+    div.appendChild(closeBtn);
     el.appendChild(div);
     if (type === 'success') {
         setTimeout(() => div.remove(), 5000);

@@ -645,3 +645,53 @@ footer {
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== Login page ===== */
+.login-page { justify-content: center; align-items: center; }
+.login-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 36px 32px;
+    width: 100%;
+    max-width: 380px;
+}
+.login-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+.login-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-heading);
+}
+.login-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 28px;
+}
+.btn-block { width: 100%; justify-content: center; padding: 10px; font-size: 14px; }
+
+/* ===== Registries page ===== */
+.panel {
+    background: var(--bg-card);
+    border: 1px solid var(--accent-border);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 24px;
+    display: none;
+}
+.panel.open { display: block; }
+.panel-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 20px;
+}
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-actions { display: flex; gap: 10px; margin-top: 4px; }
+.col-actions { width: 200px; }
+.action-btns { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: nowrap; }
+.label-hint { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text-muted); }

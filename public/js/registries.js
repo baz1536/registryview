@@ -19,22 +19,19 @@ async function loadRegistries() {
         return;
     }
 
-    tbody.innerHTML = registries.map(r => {
-        const data = escapeHtml(JSON.stringify({ id: r.id, name: r.name, url: r.url, username: r.username || '' }));
-        return `
+    tbody.innerHTML = registries.map(r => `
         <tr>
             <td>${escapeHtml(r.name)}</td>
             <td>${escapeHtml(r.url)}</td>
             <td>${escapeHtml(r.username || '—')}</td>
             <td>
                 <div class="action-btns">
-                    <button type="button" class="btn btn-ghost btn-sm" onclick="testRegistry('${r.id}', this)">Test</button>
-                    <button type="button" class="btn btn-ghost btn-sm" onclick="editRegistry('${data}')">Edit</button>
-                    <button type="button" class="btn btn-danger btn-sm" onclick="deleteRegistry('${r.id}', this)">Delete</button>
+                    <button type="button" class="btn btn-ghost btn-sm" data-action="test-registry" data-id="${escapeHtml(r.id)}">Test</button>
+                    <button type="button" class="btn btn-ghost btn-sm" data-action="edit-registry" data-id="${escapeHtml(r.id)}" data-name="${escapeHtml(r.name)}" data-url="${escapeHtml(r.url)}" data-username="${escapeHtml(r.username || '')}">Edit</button>
+                    <button type="button" class="btn btn-danger btn-sm" data-action="delete-registry" data-id="${escapeHtml(r.id)}">Delete</button>
                 </div>
             </td>
-        </tr>`;
-    }).join('');
+        </tr>`).join('');
 }
 
 function showForm(title, id = null, name = '', url = '', username = '') {
@@ -53,9 +50,8 @@ function hideForm() {
     document.getElementById('form-panel').classList.remove('open');
 }
 
-function editRegistry(encodedData) {
-    const r = JSON.parse(encodedData);
-    showForm('Edit Registry', r.id, r.name, r.url, r.username);
+function editRegistry(id, name, url, username) {
+    showForm('Edit Registry', id, name, url, username);
 }
 
 async function testRegistry(id, btn) {
@@ -74,7 +70,7 @@ async function testRegistry(id, btn) {
 }
 
 async function deleteRegistry(id, btn) {
-    const name = btn.closest('tr').querySelector('td').textContent;
+    const name = btn.closest('tr').querySelector('td').textContent.trim();
     const confirmed = await showConfirm({
         title: `Delete registry "${name}"`,
         body: `This will remove the registry configuration. This cannot be undone.`,
@@ -143,6 +139,15 @@ document.getElementById('btn-save').addEventListener('click', async () => {
     }
 
     loadRegistries();
+});
+
+document.getElementById('registry-list').addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const { action, id, name, url, username } = btn.dataset;
+    if (action === 'test-registry') await testRegistry(id, btn);
+    if (action === 'edit-registry') editRegistry(id, name, url, username);
+    if (action === 'delete-registry') await deleteRegistry(id, btn);
 });
 
 loadRegistries();
