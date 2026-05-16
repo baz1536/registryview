@@ -2,6 +2,8 @@
 
 A self-hosted Docker Registry browser. Browse, inspect, and delete images and tags across multiple private registries from a single dark-themed UI.
 
+**Docker Hub:** [baz1536/registryview](https://hub.docker.com/r/baz1536/registryview)
+
 > **Note:** RegistryView is a companion UI for the [official Docker Registry image](https://hub.docker.com/_/registry) (`registry:3`, also compatible with `registry:2`). It does not include a registry — you need to be running your own private registry for RegistryView to connect to.
 
 ## Features
@@ -58,7 +60,7 @@ Then open `http://localhost:3544` in your browser and add your first registry.
 |----------|----------|---------|-------------|
 | `AUTH_ENABLED` | No | `true` | Set to `false` to disable the login screen entirely |
 | `UI_USERNAME` | If auth on | `admin` | Username for the login screen |
-| `UI_PASSWORD` | If auth on | — | Password for the login screen |
+| `UI_PASSWORD` | If auth on | — | Password for the login screen. **Server will not start without this set when auth is enabled.** |
 | `SESSION_SECRET` | Yes | — | Long random string used to sign session cookies |
 
 ### UI
@@ -168,6 +170,8 @@ volumes:
 
 ## Notes
 
+- **Reverse proxy** — if running behind Nginx or another reverse proxy, ensure `NODE_ENV=production` is set. RegistryView sets `trust proxy` automatically, so rate limiting and secure cookies work correctly with `X-Forwarded-For` headers.
+- **Rate limiting** — login attempts are rate-limited to 5 per 15 minutes per IP.
 - **Registry v3** — RegistryView works with both `registry:2` and `registry:3`. The HTTP API is unchanged (`/v2/`). If running `registry:3`, note the garbage collection config path changed to `/etc/distribution/config.yml` (see the Maintenance section in the RegistryView About page for commands).
 - **Registry URL format** — enter hostnames only, without scheme: `docker.example.com` or `localhost:5000`. RegistryView will use `https://` for remote hosts and `http://` for localhost/IP addresses automatically.
 - **Deleting images** — deletion requires the registry to have `REGISTRY_STORAGE_DELETE_ENABLED=true` set. This is off by default in the official Docker Registry image.
