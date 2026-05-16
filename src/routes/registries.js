@@ -22,7 +22,7 @@ router.post('/', (req, res) => {
         res.status(201).json(registry);
     } catch (err) {
         logger.error('Create registry error:', err.message);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Failed to save registry.' });
     }
 });
 
@@ -35,7 +35,7 @@ router.put('/:id', (req, res) => {
         res.json(registry);
     } catch (err) {
         logger.error('Update registry error:', err.message);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Failed to update registry.' });
     }
 });
 

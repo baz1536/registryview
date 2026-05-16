@@ -10,3 +10,4 @@ DockerCompose/
 lint-first-run.md
 gc-buddy.sh
 DOCKERHUB.md
+security-review.md

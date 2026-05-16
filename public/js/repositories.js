@@ -70,7 +70,6 @@ function setDeletionEnabled(enabled) {
         warning.className = 'alert alert-warning';
         warning.innerHTML = '⚠️ <strong>Deletion is disabled on this registry.</strong> Set <code>REGISTRY_STORAGE_DELETE_ENABLED=true</code> on your registry to enable tag and image deletion.';
         alertArea.appendChild(warning);
-        // Remove delete controls from DOM immediately
         document.querySelectorAll('.repo-delete-btn').forEach(btn => btn.remove());
         Object.keys(state.repos).forEach(name => {
             if (state.repos[name].open) renderTags(name);
@@ -128,10 +127,10 @@ function repoAccordionHtml(name) {
     return `
         <div class="repo-accordion" id="accordion-${safeId}">
             <div class="repo-accordion-header">
-                <span class="repo-toggle-icon ${repo.open ? 'open' : ''}" id="toggle-${safeId}" onclick="toggleRepo('${escapeHtml(name)}')">▶</span>
-                <span class="repo-accordion-name" onclick="toggleRepo('${escapeHtml(name)}')">${escapeHtml(name)}</span>
+                <span class="repo-toggle-icon ${repo.open ? 'open' : ''}" id="toggle-${safeId}" data-action="toggle-repo" data-name="${escapeHtml(name)}">▶</span>
+                <span class="repo-accordion-name" data-action="toggle-repo" data-name="${escapeHtml(name)}">${escapeHtml(name)}</span>
                 <span class="repo-tag-pill" id="tagpill-${safeId}">${tagLabel}</span>
-                ${state.deletionEnabled ? `<button type="button" class="btn btn-danger btn-sm repo-delete-btn" onclick="deleteImage('${escapeHtml(name)}')" title="Delete image">Delete image</button>` : ''}
+                ${state.deletionEnabled ? `<button type="button" class="btn btn-danger btn-sm repo-delete-btn" data-action="delete-image" data-name="${escapeHtml(name)}" title="Delete image">Delete image</button>` : ''}
             </div>
             <div class="repo-accordion-body ${repo.open ? 'open' : ''}" id="body-${safeId}">
                 <div class="repo-tags-inner" id="tags-${safeId}">
@@ -202,7 +201,6 @@ async function loadTags(name) {
     if (pill) pill.textContent = `${state.repos[name].tagCount} tag${state.repos[name].tagCount !== 1 ? 's' : ''}`;
     renderTags(name);
 
-    // Fetch architectures for all tags in parallel (non-blocking)
     Promise.all(tags.map(async tag => {
         try {
             const r = await apiFetch(`/api/docker/${state.registryId}/architectures?repo=${encodeURIComponent(name)}&tag=${encodeURIComponent(tag)}`);
@@ -231,7 +229,7 @@ function renderTags(name) {
         ${state.deletionEnabled ? `
         <div class="tag-select-all">
             <label class="tag-label">
-                <input type="checkbox" id="selectall-${safeId}" onchange="toggleSelectAll('${escapeHtml(name)}', this.checked)">
+                <input type="checkbox" id="selectall-${safeId}" data-action="select-all" data-name="${escapeHtml(name)}">
                 Select all ${tags.length} tags
             </label>
         </div>` : ''}
@@ -245,7 +243,7 @@ function renderTags(name) {
                 return `
                     <div class="tag-item">
                         <label class="tag-label">
-                            ${state.deletionEnabled ? `<input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleTag('${escapeHtml(name)}', '${escapeHtml(tag)}', this.checked)">` : ''}
+                            ${state.deletionEnabled ? `<input type="checkbox" ${checked ? 'checked' : ''} data-action="toggle-tag" data-name="${escapeHtml(name)}" data-tag="${escapeHtml(tag)}">` : ''}
                             <span class="tag-name">${escapeHtml(tag)}</span>
                             <span class="arch-badges" id="archs-${tagSafeId}">${badgesHtml}</span>
                         </label>
@@ -295,6 +293,26 @@ function syncSelectAll(name) {
     cb.indeterminate = selectedCount > 0 && selectedCount < tags.length;
 }
 
+// ===== Event delegation for dynamically rendered elements =====
+
+document.getElementById('repos-card').addEventListener('click', (e) => {
+    const el = e.target.closest('[data-action]');
+    if (!el) return;
+    const action = el.dataset.action;
+    const name = el.dataset.name;
+    if (action === 'toggle-repo') toggleRepo(name);
+    if (action === 'delete-image') deleteImage(name);
+});
+
+document.getElementById('repos-card').addEventListener('change', (e) => {
+    const el = e.target.closest('[data-action]');
+    if (!el) return;
+    const action = el.dataset.action;
+    const name = el.dataset.name;
+    if (action === 'toggle-tag') toggleTag(name, el.dataset.tag, el.checked);
+    if (action === 'select-all') toggleSelectAll(name, el.checked);
+});
+
 // ===== Delete image (all tags) =====
 
 async function deleteImage(name) {
@@ -334,7 +352,6 @@ async function deleteImage(name) {
         return;
     }
 
-    // Remove accordion from DOM and state
     const accordion = document.getElementById(`accordion-${safeId}`);
     if (accordion) accordion.remove();
 
