@@ -9,62 +9,75 @@ async function loadAboutInfo() {
         const info = await fetch('/api/about').then(r => r.json());
         const env = info.environment || {};
 
-        const html = `
-        <div class="about-tech-grid">
-            <div class="card about-tech-card">
-                <h2 class="about-tech-title">Application</h2>
-                <div class="about-kv">
-                    <span class="about-k">Version</span>
-                    <span class="about-v"><span class="badge">v${escapeHtml(info.version)}</span></span>
-                </div>
-                <div class="about-kv">
-                    <span class="about-k">Node.js</span>
-                    <span class="about-v">${escapeHtml(info.nodeVersion || 'Unknown')}</span>
-                </div>
-                <div class="about-kv">
-                    <span class="about-k">npm</span>
-                    <span class="about-v">${escapeHtml(info.npmVersion || 'Unknown')}</span>
-                </div>
-                ${info.gitBranch && info.gitBranch !== 'main' && info.gitBranch !== 'master' ? `
-                <div class="about-kv">
-                    <span class="about-k">Git branch</span>
-                    <span class="about-v"><code>${escapeHtml(info.gitBranch)}</code></span>
-                </div>` : ''}
-            </div>
+        // Version badge in hero
+        const heroVersion = document.getElementById('about-hero-version');
+        if (heroVersion) {
+            const span = document.createElement('span');
+            span.className = 'badge about-hero-version';
+            span.textContent = `v${info.version}`;
+            heroVersion.appendChild(span);
+        }
 
-            <div class="card about-tech-card">
-                <h2 class="about-tech-title">Environment</h2>
-                <div class="about-kv">
-                    <span class="about-k">Hostname</span>
-                    <span class="about-v">${escapeHtml(env.hostname || 'Unknown')}</span>
-                </div>
-                <div class="about-kv">
-                    <span class="about-k">Address</span>
-                    <span class="about-v">${escapeHtml(
-                        env.ipAddresses && env.ipAddresses.length
-                            ? env.ipAddresses.map(ip => `${ip}:${env.port}`).join(', ')
-                            : `localhost:${env.port || ''}`
-                    )}</span>
-                </div>
-                <div class="about-kv">
-                    <span class="about-k">OS</span>
-                    <span class="about-v">${escapeHtml(env.distro || env.os || 'Unknown')}</span>
-                </div>
-                <div class="about-kv">
-                    <span class="about-k">Architecture</span>
-                    <span class="about-v">${escapeHtml(env.architecture || 'Unknown')}</span>
-                </div>
-                <div class="about-kv">
-                    <span class="about-k">Docker</span>
-                    <span class="about-v">${env.isDocker
-                        ? '<span class="badge badge-success">Yes</span>'
-                        : '<span class="badge badge-muted">No</span>'
-                    }</span>
-                </div>
-            </div>
-        </div>
+        let html = '';
 
-        `;
+        if (info.isDevelopment) {
+            html += `<div class="about-dev-banner">⚠ Development mode — extended information visible</div>`;
+
+            html += `
+            <div class="about-tech-grid">
+                <div class="card about-tech-card">
+                    <h2 class="about-tech-title">Application</h2>
+                    <div class="about-kv">
+                        <span class="about-k">Version</span>
+                        <span class="about-v"><span class="badge">v${escapeHtml(info.version)}</span></span>
+                    </div>
+                    <div class="about-kv">
+                        <span class="about-k">Node.js</span>
+                        <span class="about-v">${escapeHtml(info.nodeVersion || 'Unknown')}</span>
+                    </div>
+                    <div class="about-kv">
+                        <span class="about-k">npm</span>
+                        <span class="about-v">${escapeHtml(info.npmVersion || 'Unknown')}</span>
+                    </div>
+                    ${info.gitBranch && info.gitBranch !== 'main' && info.gitBranch !== 'master' ? `
+                    <div class="about-kv">
+                        <span class="about-k">Git branch</span>
+                        <span class="about-v"><code>${escapeHtml(info.gitBranch)}</code></span>
+                    </div>` : ''}
+                </div>
+
+                <div class="card about-tech-card">
+                    <h2 class="about-tech-title">Environment</h2>
+                    <div class="about-kv">
+                        <span class="about-k">Hostname</span>
+                        <span class="about-v">${escapeHtml(env.hostname || 'Unknown')}</span>
+                    </div>
+                    <div class="about-kv">
+                        <span class="about-k">Address</span>
+                        <span class="about-v">${escapeHtml(
+                            env.ipAddresses && env.ipAddresses.length
+                                ? env.ipAddresses.map(ip => `${ip}:${env.port}`).join(', ')
+                                : `localhost:${env.port || ''}`
+                        )}</span>
+                    </div>
+                    <div class="about-kv">
+                        <span class="about-k">OS</span>
+                        <span class="about-v">${escapeHtml(env.distro || env.os || 'Unknown')}</span>
+                    </div>
+                    <div class="about-kv">
+                        <span class="about-k">Architecture</span>
+                        <span class="about-v">${escapeHtml(env.architecture || 'Unknown')}</span>
+                    </div>
+                    <div class="about-kv">
+                        <span class="about-k">Docker</span>
+                        <span class="about-v">${env.isDocker
+                            ? '<span class="badge badge-success">Yes</span>'
+                            : '<span class="badge badge-muted">No</span>'
+                        }</span>
+                    </div>
+                </div>
+            </div>`;
+        }
 
         infoEl.innerHTML = html;
     } catch {

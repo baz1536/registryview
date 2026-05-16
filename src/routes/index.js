@@ -41,52 +41,57 @@ router.get('/about', async (_req, res) => {
         const resolvedDeps = resolvedVersions(pkg.dependencies);
         const _resolvedDevDeps = resolvedVersions(pkg.devDependencies);
 
-        const nodeVersion = process.version;
-        let npmVersion = 'Unknown';
-        try { npmVersion = `v${execSync('npm --version').toString().trim()}`; } catch {}
+        const isDevelopment = process.env.NODE_ENV !== 'production';
 
-        const platform = os.platform();
-        let environment = 'Unknown';
-        if (platform === 'win32') environment = 'Windows';
-        else if (platform === 'darwin') environment = 'macOS';
-        else if (platform === 'linux') environment = 'Linux';
-
-        const isDocker = fs.existsSync('/.dockerenv');
-
-        let distro = null;
-        try {
-            if (fs.existsSync('/etc/os-release')) {
-                const m = fs.readFileSync('/etc/os-release', 'utf8').match(/PRETTY_NAME="([^"]+)"/);
-                if (m) distro = m[1];
-            }
-        } catch {}
-
-        const networkInterfaces = os.networkInterfaces();
-        const ipAddresses = [];
-        for (const name of Object.keys(networkInterfaces)) {
-            for (const net of networkInterfaces[name]) {
-                if (!net.internal && net.family === 'IPv4') {
-                    ipAddresses.push(net.address);
-                }
-            }
-        }
-
-        const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3544;
-
-        let gitBranch = null;
-        try { gitBranch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf8' }).trim(); } catch {}
-
-        res.json({
+        const response = {
             name: pkg.name,
             version: pkg.version,
             description: pkg.description,
-            nodeVersion,
-            npmVersion,
-            gitBranch,
+            isDevelopment,
             authEnabled: process.env.AUTH_ENABLED !== 'false',
-            showEnvironment: process.env.SHOW_ENVIRONMENT !== 'false',
-            environment: {
-                os: environment,
+        };
+
+        if (isDevelopment) {
+            const nodeVersion = process.version;
+            let npmVersion = 'Unknown';
+            try { npmVersion = `v${execSync('npm --version').toString().trim()}`; } catch {}
+
+            const platform = os.platform();
+            let osName = 'Unknown';
+            if (platform === 'win32') osName = 'Windows';
+            else if (platform === 'darwin') osName = 'macOS';
+            else if (platform === 'linux') osName = 'Linux';
+
+            const isDocker = fs.existsSync('/.dockerenv');
+
+            let distro = null;
+            try {
+                if (fs.existsSync('/etc/os-release')) {
+                    const m = fs.readFileSync('/etc/os-release', 'utf8').match(/PRETTY_NAME="([^"]+)"/);
+                    if (m) distro = m[1];
+                }
+            } catch {}
+
+            const networkInterfaces = os.networkInterfaces();
+            const ipAddresses = [];
+            for (const name of Object.keys(networkInterfaces)) {
+                for (const net of networkInterfaces[name]) {
+                    if (!net.internal && net.family === 'IPv4') {
+                        ipAddresses.push(net.address);
+                    }
+                }
+            }
+
+            const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3544;
+
+            let gitBranch = null;
+            try { gitBranch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf8' }).trim(); } catch {}
+
+            response.nodeVersion = nodeVersion;
+            response.npmVersion = npmVersion;
+            response.gitBranch = gitBranch;
+            response.environment = {
+                os: osName,
                 distro,
                 platform,
                 architecture: os.arch(),
@@ -94,10 +99,11 @@ router.get('/about', async (_req, res) => {
                 hostname: os.hostname(),
                 port,
                 ipAddresses
-            },
-            dependencies: resolvedDeps,
-            devDependencies: pkg.devDependencies || {}
-        });
+            };
+            response.dependencies = resolvedDeps;
+        }
+
+        res.json(response);
     } catch (err) {
         logger.error('About info error:', err.message);
         res.status(500).json({ error: 'Failed to load application info.' });
