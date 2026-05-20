@@ -18,7 +18,10 @@ function initNav(activePage) {
         `;
     }
 
-    fetch('/api/about').then(r => r.json()).then(d => renderNav(d.authEnabled !== false)).catch(() => renderNav(true));
+    fetch('/api/about').then(r => r.json()).then(d => {
+        renderNav(d.authEnabled !== false);
+        if (d.isDevelopment) { document.getElementById('dev-banner')?.classList.add('show'); document.body.classList.add('has-dev-banner'); }
+    }).catch(() => renderNav(true));
 }
 
 async function apiFetch(url, options = {}) {

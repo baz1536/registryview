@@ -21,8 +21,6 @@ async function loadAboutInfo() {
         let html = '';
 
         if (info.isDevelopment) {
-            html += `<div class="about-dev-banner">⚠ Development mode — extended information visible</div>`;
-
             html += `
             <div class="about-tech-grid">
                 <div class="card about-tech-card">

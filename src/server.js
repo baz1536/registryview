@@ -50,7 +50,7 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'change-me-in-production',
     resave: false,
     saveUninitialized: false,
-    cookie: { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production', maxAge: 8 * 60 * 60 * 1000 }
+    cookie: { httpOnly: true, sameSite: 'strict', secure: 'auto', maxAge: 8 * 60 * 60 * 1000 }
 }));
 
 // Public routes — no auth

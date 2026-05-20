@@ -2,7 +2,7 @@
 
 A self-hosted Docker Registry browser. Browse, inspect, and delete images and tags across multiple private registries from a single dark-themed UI.
 
-**Docker Hub:** [baz1536/registryview](https://hub.docker.com/r/baz1536/registryview)
+[![Docker Hub](https://img.shields.io/docker/pulls/baz1536/registryview?logo=docker&logoColor=white)](https://hub.docker.com/r/baz1536/registryview)
 
 > **Note:** RegistryView is a companion UI for the [official Docker Registry image](https://hub.docker.com/_/registry) (`registry:3`, also compatible with `registry:2`). It does not include a registry — you need to be running your own private registry for RegistryView to connect to.
 
@@ -62,12 +62,6 @@ Then open `http://localhost:3544` in your browser and add your first registry.
 | `UI_USERNAME` | If auth on | `admin` | Username for the login screen |
 | `UI_PASSWORD` | If auth on | — | Password for the login screen. **Server will not start without this set when auth is enabled.** |
 | `SESSION_SECRET` | Yes | — | Long random string used to sign session cookies |
-
-### UI
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `SHOW_ENVIRONMENT` | No | `true` | Set to `false` to hide the Environment section on the About page |
 
 ### Security
 
