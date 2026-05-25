@@ -72,6 +72,7 @@ export default [
                 URL: 'readonly',
                 MutationObserver: 'readonly',
                 prompt: 'readonly',
+                confirm: 'readonly',
                 Event: 'readonly',
                 btoa: 'readonly',
             },
@@ -110,6 +111,7 @@ export default [
                 URL: 'readonly',
                 MutationObserver: 'readonly',
                 prompt: 'readonly',
+                confirm: 'readonly',
                 Event: 'readonly',
                 btoa: 'readonly',
                 // Shared helpers defined in app.js and loaded via <script> tags

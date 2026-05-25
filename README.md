@@ -13,6 +13,7 @@ A self-hosted Docker Registry browser. Browse, inspect, and delete images and ta
 - **Bulk deletion** — select and delete multiple tags at once across multiple repos
 - **Architecture badges** — see which platforms (amd64, arm64, etc.) each tag was built for
 - **Session auth** — optional login screen to protect the UI
+- **Two-factor authentication** — optional TOTP 2FA (Google Authenticator, Authy, 1Password, etc.), managed from the Security page
 - **Outbound proxy support** — reach registries via HTTP/HTTPS proxy with NO_PROXY support
 
 ---
@@ -62,6 +63,11 @@ Then open `http://localhost:3544` in your browser and add your first registry.
 | `UI_USERNAME` | If auth on | `admin` | Username for the login screen |
 | `UI_PASSWORD` | If auth on | — | Password for the login screen. **Server will not start without this set when auth is enabled.** |
 | `SESSION_SECRET` | Yes | — | Long random string used to sign session cookies |
+
+
+Two-factor authentication is optional and managed from the **Security** page once logged in. When you click **Set up 2FA**, a TOTP secret is generated and stored encrypted in `mfa.json` in your data volume. Scan the QR code with your authenticator app (Google Authenticator, Authy, 1Password, etc.), verify a code to confirm, and 2FA is automatically enabled.
+
+To disable or reset 2FA, use the buttons on the Security page — no server restart or env var changes needed. If you lose access to your authenticator app, click **Reset secret** on the Security page to generate a fresh QR code to re-scan.
 
 ### Security
 

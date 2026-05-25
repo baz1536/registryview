@@ -9,12 +9,14 @@ const logger = require('./utils/logger');
 const requireAuth = require('./middleware/auth');
 
 const store = require('./services/registryStore');
+const updateChecker = require('./services/updateChecker');
 const authRoutes = require('./routes/auth');
 const registriesRoutes = require('./routes/registries');
 const dockerRoutes = require('./routes/docker');
 const aboutRoutes = require('./routes/index');
 
 store.initialise();
+updateChecker.start();
 
 const app = express();
 const DEFAULT_PORT = 3544;
@@ -56,6 +58,9 @@ app.use(session({
 // Public routes — no auth
 app.use('/', authRoutes);
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
+app.get('/api/env', (req, res) => res.json({ isDevelopment: process.env.NODE_ENV !== 'production' }));
+
+// Auth API routes (login, totp, 2fa setup) are mounted inside authRoutes above — no requireAuth wrapper
 
 // Serve static assets (css, js, images, favicon) publicly
 app.use('/css', express.static(path.join(__dirname, '../public/css')));
@@ -68,6 +73,7 @@ app.get('/', requireAuth, (req, res) => res.redirect('/repositories.html'));
 app.get('/repositories.html', requireAuth, (req, res) => res.sendFile('repositories.html', { root: 'public' }));
 app.get('/registries.html', requireAuth, (req, res) => res.sendFile('registries.html', { root: 'public' }));
 app.get('/about.html', requireAuth, (req, res) => res.sendFile('about.html', { root: 'public' }));
+app.get('/security.html', requireAuth, (req, res) => res.sendFile('security.html', { root: 'public' }));
 
 // Protected API routes
 app.use('/api/registries', requireAuth, registriesRoutes);
