@@ -12,6 +12,7 @@ function initNav(activePage) {
             </a>
             <a href="/repositories.html" class="nav-link ${activePage === 'repositories' ? 'active' : ''}">Repositories</a>
             <a href="/registries.html" class="nav-link ${activePage === 'registries' ? 'active' : ''}">Registries</a>
+            ${authEnabled ? `<a href="/security.html" class="nav-link ${activePage === 'security' ? 'active' : ''}">Security</a>` : ''}
             <a href="/about.html" class="nav-link ${activePage === 'about' ? 'active' : ''}">About</a>
             <span class="nav-spacer"></span>
             ${authEnabled ? `<form method="POST" action="/logout" class="nav-logout-form"><button type="submit" class="nav-logout">Sign out</button></form>` : ''}
@@ -20,8 +21,13 @@ function initNav(activePage) {
 
     fetch('/api/about').then(r => r.json()).then(d => {
         renderNav(d.authEnabled !== false);
-        if (d.isDevelopment) { document.getElementById('dev-banner')?.classList.add('show'); document.body.classList.add('has-dev-banner'); }
+        if (d.updateAvailable && d.latestVersion) {
+            _showUpdateToast(d.latestVersion);
+        }
     }).catch(() => renderNav(true));
+    fetch('/api/env').then(r => r.json()).then(d => {
+        if (d.isDevelopment) { document.getElementById('dev-banner')?.classList.add('show'); document.body.classList.add('has-dev-banner'); }
+    }).catch(() => {});
 }
 
 async function apiFetch(url, options = {}) {
@@ -152,4 +158,30 @@ function showConfirm({ title, body, confirmText = 'Delete', icon = '🗑️', re
     if (!requireWord) confirmBtn.focus();
 
     return new Promise(resolve => { _modalResolve = resolve; });
+}
+
+// ===== Update toast =====
+
+function _showUpdateToast(latestVersion) {
+    if (document.getElementById('update-toast')) return;
+    if (sessionStorage.getItem('update-toast-dismissed') === latestVersion) return;
+    const el = document.createElement('div');
+    el.id = 'update-toast';
+    el.className = 'update-toast';
+    el.innerHTML = `
+        <span class="update-toast-icon">&#8593;</span>
+        <div class="update-toast-body">
+            <div class="update-toast-title">Update available — v${escapeHtml(latestVersion)}</div>
+            <div class="update-toast-sub">
+                <a href="https://hub.docker.com/r/baz1536/registryview" class="update-toast-link" target="_blank" rel="noopener">Docker Hub &#8599;</a>
+                <span style="color:var(--border-strong);margin:0 4px">|</span>
+                <a href="https://github.com/baz1536/registryview/releases/latest" class="update-toast-link" target="_blank" rel="noopener">Release notes &#8599;</a>
+            </div>
+        </div>
+        <button class="update-toast-close" aria-label="Dismiss">&times;</button>`;
+    document.body.appendChild(el);
+    el.querySelector('.update-toast-close').addEventListener('click', () => {
+        sessionStorage.setItem('update-toast-dismissed', latestVersion);
+        el.remove();
+    });
 }

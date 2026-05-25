@@ -20,6 +20,19 @@ async function loadAboutInfo() {
 
         let html = '';
 
+        if (info.updateAvailable && info.latestVersion) {
+            html += `
+            <div class="about-update-banner">
+                <span class="about-update-icon">&#8593;</span>
+                <div class="about-update-text">
+                    <strong>Update available — v${escapeHtml(info.latestVersion)}</strong>
+                    <span>You are running v${escapeHtml(info.version)}.</span>
+                </div>
+                <a href="https://hub.docker.com/r/baz1536/registryview" class="btn btn-primary btn-sm about-update-btn" target="_blank" rel="noopener">Docker Hub</a>
+                <a href="https://github.com/baz1536/registryview/releases/latest" class="btn btn-ghost btn-sm about-update-btn" target="_blank" rel="noopener">Release notes</a>
+            </div>`;
+        }
+
         if (info.isDevelopment) {
             html += `
             <div class="about-tech-grid">
@@ -78,7 +91,8 @@ async function loadAboutInfo() {
         }
 
         infoEl.innerHTML = html;
-    } catch {
+
+} catch {
         infoEl.innerHTML = '<p class="empty-state">Failed to load application information.</p>';
     }
 }

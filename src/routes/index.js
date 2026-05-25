@@ -5,6 +5,7 @@ const os = require('os');
 const path = require('path');
 const { execSync } = require('child_process');
 const logger = require('../utils/logger');
+const updateChecker = require('../services/updateChecker');
 
 router.get('/about', async (_req, res) => {
     try {
@@ -43,12 +44,16 @@ router.get('/about', async (_req, res) => {
 
         const isDevelopment = process.env.NODE_ENV !== 'production';
 
+        const { latestVersion, updateAvailable } = updateChecker.getStatus();
+
         const response = {
             name: pkg.name,
             version: pkg.version,
             description: pkg.description,
             isDevelopment,
             authEnabled: process.env.AUTH_ENABLED !== 'false',
+            latestVersion,
+            updateAvailable,
         };
 
         if (isDevelopment) {
@@ -109,5 +114,6 @@ router.get('/about', async (_req, res) => {
         res.status(500).json({ error: 'Failed to load application info.' });
     }
 });
+
 
 module.exports = router;

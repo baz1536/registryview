@@ -14,11 +14,11 @@
             <img src="/images/logo.svg" alt="" width="36" height="36">
             <div class="login-title"><span class="nav-brand-registry">Registry</span><span class="nav-brand-view">View</span></div>
         </div>
-        <div class="login-sub">Sign in with your RegistryView credentials to access your registries</div>
+        <div class="login-sub" id="loginHeading">Sign in with your RegistryView credentials to access your registries</div>
 
         <div id="alert-area"></div>
 
-        <form method="POST" action="/login">
+        <form id="loginForm">
             <div class="form-group">
                 <label for="username">Username</label>
                 <input type="text" id="username" name="username" autocomplete="username" autofocus required>
@@ -27,7 +27,16 @@
                 <label for="password">Password</label>
                 <input type="password" id="password" name="password" autocomplete="current-password" required>
             </div>
-            <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+            <button type="submit" class="btn btn-primary btn-block" id="loginBtn">Sign in</button>
+        </form>
+
+        <form id="totpForm" class="hidden">
+            <div class="form-group">
+                <label for="totpCode">Authenticator Code</label>
+                <input type="text" id="totpCode" name="totpCode" inputmode="numeric" pattern="\d{6}" maxlength="6" autocomplete="one-time-code" placeholder="000000" class="totp-input">
+            </div>
+            <button type="submit" class="btn btn-primary btn-block" id="totpBtn">Verify</button>
+            <p class="totp-hint">Enter the 6-digit code from your authenticator app</p>
         </form>
     </div>
     <script src="/js/login.js"></script>
