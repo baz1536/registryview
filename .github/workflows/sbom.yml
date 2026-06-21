@@ -1,0 +1,44 @@
+name: SBOM Generation and Upload
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  sbom:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install CycloneDX
+        run: npm install -g @cyclonedx/cyclonedx-npm
+
+      - name: Generate SBOM
+        run: cyclonedx-npm --output-format JSON --output-file sbom.json
+
+      - name: Archive SBOM as artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ github.sha }}
+          path: sbom.json
+          retention-days: 365
+
+      - name: Upload SBOM to Dependency-Track
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" \
+            --request POST "${{ secrets.DEPTRACK_URL }}/api/v1/bom" \
+            --header "X-Api-Key: ${{ secrets.DEPTRACK_API_KEY }}" \
+            --form "projectName=registryview" \
+            --form "projectVersion=${{ github.ref_name }}-${{ github.sha }}" \
+            --form "autoCreate=true" \
+            --form "bom=@sbom.json"
