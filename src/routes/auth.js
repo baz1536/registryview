@@ -4,6 +4,7 @@ const { rateLimit } = require('express-rate-limit');
 const OTPAuth = require('otpauth');
 const QRCode = require('qrcode');
 const mfaStore = require('../services/mfaStore');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -135,7 +136,8 @@ router.get('/api/auth/2fa/setup', async (req, res) => {
         const qrDataUrl = await buildQr(secret);
         res.json({ configured: true, confirmed: false, enabled: false, qrDataUrl, secret });
     } catch (err) {
-        res.status(503).json({ error: err.message });
+        logger.error('2FA setup GET error:', err.message);
+        res.status(503).json({ error: 'Failed to load 2FA configuration.' });
     }
 });
 
@@ -150,7 +152,8 @@ router.post('/api/auth/2fa/setup', async (req, res) => {
         const qrDataUrl = await buildQr(secret);
         res.json({ configured: true, confirmed: mfaStore.isConfirmed(), enabled: mfaStore.isEnabled(), qrDataUrl, secret });
     } catch (err) {
-        res.status(503).json({ error: err.message });
+        logger.error('2FA setup POST error:', err.message);
+        res.status(503).json({ error: 'Failed to generate 2FA secret.' });
     }
 });
 
@@ -178,7 +181,8 @@ router.post('/api/auth/2fa/disable', (req, res) => {
         mfaStore.setEnabled(false);
         res.json({ ok: true });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        logger.error('2FA disable error:', err.message);
+        res.status(500).json({ error: 'Failed to disable 2FA.' });
     }
 });
 
@@ -190,7 +194,8 @@ router.post('/api/auth/2fa/reset', (req, res) => {
         mfaStore.resetSecret();
         res.json({ ok: true });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        logger.error('2FA reset error:', err.message);
+        res.status(500).json({ error: 'Failed to reset 2FA.' });
     }
 });
 

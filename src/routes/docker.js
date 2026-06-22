@@ -34,7 +34,7 @@ router.get('/:registryId/catalog', async (req, res) => {
         res.json({ repositories: withCounts, deletionEnabled });
     } catch (err) {
         logger.error('Catalog error:', err.message);
-        res.status(502).json({ error: err.message });
+        res.status(502).json({ error: 'Failed to fetch catalog from registry.' });
     }
 });
 
@@ -48,7 +48,7 @@ router.get('/:registryId/tags', async (req, res) => {
         res.json(data);
     } catch (err) {
         logger.error('Tags error:', err.message);
-        res.status(502).json({ error: err.message });
+        res.status(502).json({ error: 'Failed to fetch tags from registry.' });
     }
 });
 
@@ -64,7 +64,7 @@ router.delete('/:registryId/tags', async (req, res) => {
         res.json(result);
     } catch (err) {
         logger.error('Delete tags error:', err.message);
-        res.status(502).json({ error: err.message });
+        res.status(502).json({ error: 'Failed to delete tags from registry.' });
     }
 });
 
@@ -78,7 +78,7 @@ router.get('/:registryId/architectures', async (req, res) => {
         res.json({ architectures: archs });
     } catch (err) {
         logger.error('Architectures error:', err.message);
-        res.status(502).json({ error: err.message });
+        res.status(502).json({ error: 'Failed to fetch image architectures from registry.' });
     }
 });
 
@@ -95,7 +95,7 @@ router.delete('/:registryId/image', async (req, res) => {
         res.json(result);
     } catch (err) {
         logger.error('Delete image error:', err.message);
-        res.status(502).json({ error: err.message });
+        res.status(502).json({ error: 'Failed to delete image from registry.' });
     }
 });
 
