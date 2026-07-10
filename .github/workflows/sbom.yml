@@ -33,6 +33,10 @@ jobs:
           path: sbom.json
           retention-days: 365
 
+      - name: Read version
+        id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
       - name: Upload SBOM to Dependency-Track
         run: |
           HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
@@ -48,3 +52,20 @@ jobs:
             exit 1
           fi
           echo "✅ SBOM uploaded successfully"
+
+      - name: Tag project with current version
+        run: |
+          PROJECT=$(curl -s "${{ vars.DEPTRACK_URL }}/api/v1/project?name=registryview&version=latest" \
+            --header "X-Api-Key: ${{ secrets.DEPTRACK_API_KEY }}" | jq '.[0]')
+          UPDATED=$(echo "$PROJECT" | jq --arg tag "${{ steps.version.outputs.version }}" '{uuid, name, version, classifier, active, tags: [{"name": $tag}]}')
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+            "${{ vars.DEPTRACK_URL }}/api/v1/project" \
+            --header "X-Api-Key: ${{ secrets.DEPTRACK_API_KEY }}" \
+            --header "Content-Type: application/json" \
+            --data "$UPDATED")
+          echo "HTTP response: $HTTP_CODE"
+          if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 300 ]]; then
+            echo "❌ Tag update failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
+          echo "✅ Tagged as ${{ steps.version.outputs.version }}"
