@@ -47,10 +47,33 @@ jobs:
         run: |
           STACK_FILE=$(curl -sf "$PORTAINER_URL/api/stacks/$STACK_ID/file" \
             -H "X-API-Key: $PORTAINER_API_KEY" | jq -r '.StackFileContent')
+          # Portainer's PUT can return HTTP 200 with the redeploy itself still failed
+          # internally (body's top-level "Status" is 3 = error, not 1 = active) — its
+          # own compose-plugin deployment goroutine has been observed to report Status:3
+          # immediately and then settle to Status:1 a few seconds later on its own, with
+          # no further action needed. Firing a second PUT while that's still in flight
+          # gets a 409 "Stack deployment is already in progress" rather than helping, so
+          # don't retry the PUT — poll the stack's own GET status instead and only fail
+          # if it never settles.
           curl -sf -X PUT "$PORTAINER_URL/api/stacks/$STACK_ID?endpointId=$ENDPOINT_ID" \
             -H "X-API-Key: $PORTAINER_API_KEY" \
             -H "Content-Type: application/json" \
-            -d "{\"stackFileContent\": $(echo "$STACK_FILE" | jq -Rs .), \"pullImage\": true}"
+            -d "{\"stackFileContent\": $(echo "$STACK_FILE" | jq -Rs .), \"pullImage\": true}" \
+            > /tmp/portainer_deploy_resp.json
+          cat /tmp/portainer_deploy_resp.json
+
+          for attempt in 1 2 3 4 5 6; do
+            STATUS=$(curl -sf "$PORTAINER_URL/api/stacks/$STACK_ID" \
+              -H "X-API-Key: $PORTAINER_API_KEY" | jq -r '.Status')
+            if [[ "$STATUS" == "1" ]]; then
+              echo "Deploy settled to Status: $STATUS"
+              exit 0
+            fi
+            echo "Attempt $attempt: stack Status=$STATUS (expected 1/active), waiting 5s..."
+            sleep 5
+          done
+          echo "Deploy did not settle to Status 1 after 30s"
+          exit 1
 
       - name: Purge unused remote images
         env:
