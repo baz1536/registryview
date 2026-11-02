@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const logger = require('../utils/logger');
+const { writeFileAtomic } = require('../utils/atomicFile');
 
 const ALGORITHM = 'aes-256-gcm';
 const LEGACY_SALT = 'registryview-salt';
@@ -43,19 +44,20 @@ function decrypt(hex) {
     return decipher.update(encrypted) + decipher.final('utf8');
 }
 
+// Returns null only when the file doesn't exist. A file that can't be read throws, so a
+// damaged store is never mistaken for a fresh install and overwritten.
 function readRaw() {
+    if (!fs.existsSync(DATA_FILE)) return null;
     try {
-        if (!fs.existsSync(DATA_FILE)) return null;
         return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
     } catch (err) {
-        logger.error('Failed to read registries file:', err.message);
-        return null;
+        logger.error(`Failed to read registries file: ${err.message}`);
+        throw err;
     }
 }
 
 function writeFile(salt, registries) {
-    fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
-    fs.writeFileSync(DATA_FILE, JSON.stringify({ salt, registries }, null, 2), 'utf8');
+    writeFileAtomic(DATA_FILE, JSON.stringify({ salt, registries }, null, 2));
 }
 
 // Called once at startup — migrates legacy flat-array format and ensures a random salt exists
@@ -144,12 +146,16 @@ function getById(id) {
     return decryptRegistry(reg);
 }
 
+function normaliseUrl(url) {
+    return url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+}
+
 function create({ name, url, username, password }) {
     const registries = readRegistries();
     const entry = {
         id: uuidv4(),
         name,
-        url: url.replace(/^https?:\/\//, '').replace(/\/$/, ''),
+        url: normaliseUrl(url),
         username: username || '',
         password: password ? encrypt(password) : ''
     };
@@ -167,7 +173,7 @@ function update(id, { name, url, username, password }) {
     registries[idx] = {
         ...existing,
         name: name ?? existing.name,
-        url: url ? url.replace(/^https?:\/\//, '').replace(/\/$/, '') : existing.url,
+        url: url ? normaliseUrl(url) : existing.url,
         username: username ?? existing.username,
         password: password ? encrypt(password) : existing.password
     };
@@ -186,4 +192,4 @@ function remove(id) {
     return true;
 }
 
-module.exports = { initialise, getAll, getById, create, update, remove };
+module.exports = { initialise, getAll, getById, create, update, remove, normaliseUrl };

@@ -4,6 +4,16 @@ const store = require('../services/registryStore');
 const docker = require('../services/dockerClient');
 const logger = require('../utils/logger');
 
+// Repo and tag names go straight into upstream API paths, so only valid Docker names are accepted
+function isValidRepo(repo) {
+    return typeof repo === 'string' && repo.length <= 255 && /^[a-z0-9._/-]+$/.test(repo) &&
+        repo.split('/').every(part => part && part !== '.' && part !== '..');
+}
+
+function isValidTag(tag) {
+    return typeof tag === 'string' && /^[A-Za-z0-9_][A-Za-z0-9._-]{0,127}$/.test(tag);
+}
+
 function getRegistry(req, res) {
     const registry = store.getById(req.params.registryId);
     if (!registry) {
@@ -43,6 +53,7 @@ router.get('/:registryId/tags', async (req, res) => {
     if (!registry) return;
     const { repo } = req.query;
     if (!repo) return res.status(400).json({ error: 'repo query param required' });
+    if (!isValidRepo(repo)) return res.status(400).json({ error: 'Invalid repo name' });
     try {
         const data = await docker.getTags(registry, repo);
         res.json(data);
@@ -59,6 +70,9 @@ router.delete('/:registryId/tags', async (req, res) => {
     if (!repo || !Array.isArray(tags) || tags.length === 0) {
         return res.status(400).json({ error: 'repo and tags[] are required' });
     }
+    if (!isValidRepo(repo) || !tags.every(isValidTag)) {
+        return res.status(400).json({ error: 'Invalid repo or tag name' });
+    }
     try {
         const result = await docker.deleteTags(registry, repo, tags);
         res.json(result);
@@ -73,6 +87,7 @@ router.get('/:registryId/architectures', async (req, res) => {
     if (!registry) return;
     const { repo, tag } = req.query;
     if (!repo || !tag) return res.status(400).json({ error: 'repo and tag query params required' });
+    if (!isValidRepo(repo) || !isValidTag(tag)) return res.status(400).json({ error: 'Invalid repo or tag name' });
     try {
         const archs = await docker.getArchitectures(registry, repo, tag);
         res.json({ architectures: archs });
@@ -88,6 +103,7 @@ router.delete('/:registryId/image', async (req, res) => {
     if (!registry) return;
     const { repo } = req.body;
     if (!repo) return res.status(400).json({ error: 'repo is required' });
+    if (!isValidRepo(repo)) return res.status(400).json({ error: 'Invalid repo name' });
     try {
         const { tags } = await docker.getTags(registry, repo);
         if (!tags || !tags.length) return res.json({ deleted: [], errors: [] });

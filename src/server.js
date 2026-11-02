@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const express = require('express');
 const helmet = require('helmet');
 const session = require('express-session');
@@ -9,6 +10,7 @@ const logger = require('./utils/logger');
 const requireAuth = require('./middleware/auth');
 
 const store = require('./services/registryStore');
+const FileSessionStore = require('./services/sessionStore');
 const updateChecker = require('./services/updateChecker');
 const authRoutes = require('./routes/auth');
 const registriesRoutes = require('./routes/registries');
@@ -21,7 +23,9 @@ updateChecker.start();
 const app = express();
 const DEFAULT_PORT = 3544;
 
-app.set('trust proxy', 1);
+// Number of reverse proxies in front of the app. Only set this when clients can't reach
+// the port directly, otherwise X-Forwarded-For can be spoofed to dodge the login rate limit.
+app.set('trust proxy', parseInt(process.env.TRUST_PROXY, 10) || 0);
 
 const isProduction = process.env.NODE_ENV === 'production';
 app.use(helmet({
@@ -48,8 +52,13 @@ app.use(helmet({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+if (!process.env.SESSION_SECRET) {
+    logger.warn('SESSION_SECRET is not set — using a random secret, so logins will not survive a restart.');
+}
+
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'change-me-in-production',
+    store: new FileSessionStore(),
+    secret: process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex'),
     resave: false,
     saveUninitialized: false,
     cookie: { httpOnly: true, sameSite: 'strict', secure: 'auto', maxAge: 8 * 60 * 60 * 1000 }

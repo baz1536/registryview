@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const logger = require('../utils/logger');
+const { writeFileAtomic } = require('../utils/atomicFile');
 
 const ALGORITHM = 'aes-256-gcm';
 const MFA_FILE = path.join(process.env.DATA_DIR || '/app/data', 'mfa.json');
@@ -52,8 +53,7 @@ function readFile() {
 }
 
 function writeFile(payload) {
-    fs.mkdirSync(path.dirname(MFA_FILE), { recursive: true });
-    fs.writeFileSync(MFA_FILE, JSON.stringify(payload, null, 2), 'utf8');
+    writeFileAtomic(MFA_FILE, JSON.stringify(payload, null, 2));
 }
 
 // Returns true if mfa.json exists (2FA has been set up).
@@ -98,16 +98,6 @@ function markConfirmed() {
     }
 }
 
-// Resets confirmed and enabled flags — used when re-entering setup flow.
-function resetConfirmed() {
-    const stored = readFile();
-    if (stored) {
-        stored.confirmed = false;
-        stored.enabled = false;
-        writeFile(stored);
-    }
-}
-
 // Deletes mfa.json — treated as 2FA not configured / disabled.
 function resetSecret() {
     if (fs.existsSync(MFA_FILE)) {
@@ -130,4 +120,4 @@ function setEnabled(value) {
     writeFile(stored);
 }
 
-module.exports = { isConfigured, getSecret, createSecret, isConfirmed, markConfirmed, resetConfirmed, isEnabled, setEnabled, resetSecret };
+module.exports = { isConfigured, getSecret, createSecret, isConfirmed, markConfirmed, isEnabled, setEnabled, resetSecret };

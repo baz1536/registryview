@@ -30,6 +30,11 @@ router.put('/:id', (req, res) => {
     const { name, url, username, password } = req.body;
     if (url && !validateHost(url)) return res.status(400).json({ error: 'url must be a valid registry hostname, e.g. docker.dbrose.uk or localhost:5000' });
     try {
+        // The stored password must not follow the registry to a new host
+        const existing = store.getById(req.params.id);
+        if (existing && url && store.normaliseUrl(url) !== existing.url && existing.password && !password) {
+            return res.status(400).json({ error: 'Re-enter the password when changing the registry URL.' });
+        }
         const registry = store.update(req.params.id, { name, url, username, password });
         if (!registry) return res.status(404).json({ error: 'Registry not found' });
         res.json(registry);
