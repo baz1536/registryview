@@ -42,7 +42,7 @@ npm run docker:push
 
 ## Environment
 
-`PORT` (3544), `NODE_ENV`, `NGINX_URL`, `AUTH_ENABLED`, `UI_USERNAME`, `UI_PASSWORD`, `SESSION_SECRET`, `ENCRYPTION_KEY`, `DATA_DIR`, `LOG_DIR`, `LOG_LEVEL`, `HTTPS_PROXY`/`NO_PROXY`.
+`PORT` (3544), `NODE_ENV`, `NGINX_URL`, `TRUST_PROXY` (0; set to the hop count behind a reverse proxy), `AUTH_ENABLED`, `UI_USERNAME`, `UI_PASSWORD`, `SESSION_SECRET`, `ENCRYPTION_KEY`, `DATA_DIR`, `LOG_DIR`, `LOG_LEVEL`, `HTTPS_PROXY`/`NO_PROXY`.
 
 ## Key conventions
 

@@ -10,10 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '26'
 
@@ -21,13 +21,27 @@ jobs:
         run: npm ci
 
       - name: Install CycloneDX
-        run: npm install -g @cyclonedx/cyclonedx-npm
+        run: npm install -g @cyclonedx/cyclonedx-npm@6.0.1
 
       - name: Generate SBOM
         run: cyclonedx-npm --output-format JSON --output-file sbom.json
 
+      - name: Add Node.js runtime to SBOM
+        run: |
+          NODE_VERSION=$(grep -m1 -oP '^ARG NODE_VERSION=\K[0-9]+\.[0-9]+\.[0-9]+' Dockerfile)
+          if [ -z "$NODE_VERSION" ]; then
+            echo "❌ No exact ARG NODE_VERSION=X.Y.Z in Dockerfile"
+            exit 1
+          fi
+          jq --arg v "$NODE_VERSION" '.components += [{
+            "type": "platform", "bom-ref": "runtime-node", "name": "node", "version": $v,
+            "purl": "pkg:generic/node@\($v)",
+            "cpe": "cpe:2.3:a:nodejs:node.js:\($v):*:*:*:*:*:*:*"
+          }]' sbom.json > sbom.json.tmp && mv sbom.json.tmp sbom.json
+          echo "✅ Added node@$NODE_VERSION to SBOM"
+
       - name: Archive SBOM as artefact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: sbom-${{ github.sha }}
           path: sbom.json

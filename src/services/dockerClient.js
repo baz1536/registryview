@@ -14,9 +14,22 @@ function basicAuth(username, password) {
     return 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
 }
 
+function isPrivateIpv4(host) {
+    const match = /^(\d{1,3})\.(\d{1,3})\.\d{1,3}\.\d{1,3}(:\d+)?$/.exec(host);
+    if (!match) return false;
+    const a = Number(match[1]);
+    const b = Number(match[2]);
+    return a === 10 || a === 127 ||
+        (a === 100 && b >= 64 && b <= 127) ||
+        (a === 169 && b === 254) ||
+        (a === 172 && b >= 16 && b <= 31) ||
+        (a === 192 && b === 168);
+}
+
+// Plain HTTP is only used on local and private addresses — credentials never cross the internet unencrypted
 function resolveBaseUrl(host) {
     const clean = host.replace(/^https?:\/\//, '').replace(/\/$/, '');
-    const isLocal = /^localhost(:\d+)?$/.test(clean) || /^(\d{1,3}\.){3}\d{1,3}(:\d+)?$/.test(clean);
+    const isLocal = /^localhost(:\d+)?$/.test(clean) || isPrivateIpv4(clean);
     return `${isLocal ? 'http' : 'https'}://${clean}`;
 }
 

@@ -1,5 +1,16 @@
 initNav('security');
 
+// Asks for a current code, then posts it. Returns null if the prompt is cancelled.
+function postWithCode(url) {
+    const code = prompt('Enter the 6-digit code from your authenticator app:');
+    if (code === null) return null;
+    return fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: code.trim() }),
+    });
+}
+
 async function loadSecurity() {
     const el = document.getElementById('security-2fa');
     const modal = document.getElementById('twoFaModal');
@@ -118,7 +129,8 @@ async function loadSecurity() {
                 icon: '🔓',
             });
             if (!ok) return;
-            const r = await fetch('/api/auth/2fa/disable', { method: 'POST' });
+            const r = await postWithCode('/api/auth/2fa/disable');
+            if (!r) return;
             const result = await r.json();
             if (result.ok) { loadSecurity(); } else { alert(result.error || 'Failed to disable 2FA.'); }
         });
@@ -131,7 +143,8 @@ async function loadSecurity() {
                 icon: '⚠️',
             });
             if (!ok) return;
-            const r = await fetch('/api/auth/2fa/reset', { method: 'POST' });
+            const r = await postWithCode('/api/auth/2fa/reset');
+            if (!r) return;
             const result = await r.json();
             if (result.ok) { loadSecurity(); } else { alert(result.error || 'Reset failed.'); }
         });

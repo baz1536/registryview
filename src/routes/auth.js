@@ -38,6 +38,9 @@ function isAuthEnabled() {
     return process.env.AUTH_ENABLED !== 'false';
 }
 
+// Highest TOTP time step accepted so far — stops a code being reused within its window
+let lastUsedCounter = -1;
+
 function verifyTotp(token) {
     const totp = new OTPAuth.TOTP({
         secret: OTPAuth.Secret.fromBase32(mfaStore.getSecret()),
@@ -45,7 +48,35 @@ function verifyTotp(token) {
         period: 30,
         algorithm: 'SHA1',
     });
-    return totp.validate({ token, window: 1 }) !== null;
+    const delta = totp.validate({ token, window: 1 });
+    if (delta === null) return false;
+    const counter = totp.counter() + delta;
+    if (counter <= lastUsedCounter) return false;
+    lastUsedCounter = counter;
+    return true;
+}
+
+// Replaces the session ID so one set before login can't be reused afterwards
+function regenerateSession(req) {
+    return new Promise((resolve, reject) => {
+        req.session.regenerate(err => (err ? reject(err) : resolve()));
+    });
+}
+
+// A current code is needed to weaken 2FA, so a stolen session alone can't remove it.
+// Sends the error response and returns false when the check fails.
+function checkCurrentCode(req, res) {
+    if (!isAuthEnabled() || !mfaStore.isConfirmed()) return true;
+    const { code } = req.body || {};
+    if (!code || !/^\d{6}$/.test(code)) {
+        res.status(400).json({ error: 'A 6-digit code is required' });
+        return false;
+    }
+    if (!verifyTotp(code)) {
+        res.status(401).json({ error: 'Invalid code — check your authenticator app' });
+        return false;
+    }
+    return true;
 }
 
 function buildQr(secret) {
@@ -69,7 +100,7 @@ router.get('/login', (req, res) => {
 });
 
 // Step 1 — username + password
-router.post('/api/auth/login', loginLimiter, (req, res) => {
+router.post('/api/auth/login', loginLimiter, async (req, res) => {
     if (!isAuthEnabled()) {
         req.session.authenticated = true;
         return res.json({ ok: true, mfaRequired: false });
@@ -85,6 +116,7 @@ router.post('/api/auth/login', loginLimiter, (req, res) => {
     const passOk = timingSafeCompare(password || '', validPass);
 
     if (userOk && passOk) {
+        await regenerateSession(req);
         if (mfaStore.isConfigured() && mfaStore.isEnabled() && mfaStore.isConfirmed()) {
             req.session.pendingUser = { username };
             return res.json({ ok: true, mfaRequired: true });
@@ -97,7 +129,7 @@ router.post('/api/auth/login', loginLimiter, (req, res) => {
 });
 
 // Step 2 — TOTP code
-router.post('/api/auth/totp', totpLimiter, (req, res) => {
+router.post('/api/auth/totp', totpLimiter, async (req, res) => {
     if (!req.session?.pendingUser) {
         return res.status(401).json({ error: 'No pending authentication' });
     }
@@ -107,7 +139,7 @@ router.post('/api/auth/totp', totpLimiter, (req, res) => {
     }
     try {
         if (verifyTotp(code)) {
-            req.session.pendingUser = null;
+            await regenerateSession(req);
             req.session.authenticated = true;
             return res.json({ ok: true });
         }
@@ -141,14 +173,19 @@ router.get('/api/auth/2fa/setup', async (req, res) => {
     }
 });
 
-// POST — generate a new secret and write mfa.json (idempotent if already exists).
+// POST — returns the unconfirmed secret, or generates a new one. A confirmed secret is never
+// returned: active 2FA must be disabled first, and setting up again after that rotates it.
 router.post('/api/auth/2fa/setup', async (req, res) => {
     if (isAuthEnabled() && !req.session?.authenticated) {
         return res.status(401).json({ error: 'Unauthorised' });
     }
+    if (mfaStore.isConfirmed() && mfaStore.isEnabled()) {
+        return res.status(409).json({ error: 'Disable 2FA before setting it up again.' });
+    }
     try {
-        const secret = mfaStore.isConfigured() ? mfaStore.getSecret() : mfaStore.createSecret();
-        mfaStore.resetConfirmed();
+        const reusable = mfaStore.isConfigured() && !mfaStore.isConfirmed();
+        const secret = reusable ? mfaStore.getSecret() : mfaStore.createSecret();
+        if (!reusable) lastUsedCounter = -1;
         const qrDataUrl = await buildQr(secret);
         res.json({ configured: true, confirmed: mfaStore.isConfirmed(), enabled: mfaStore.isEnabled(), qrDataUrl, secret });
     } catch (err) {
@@ -158,7 +195,7 @@ router.post('/api/auth/2fa/setup', async (req, res) => {
 });
 
 // 2FA verify — checks a code and marks setup as confirmed on success.
-router.post('/api/auth/2fa/verify', (req, res) => {
+router.post('/api/auth/2fa/verify', totpLimiter, (req, res) => {
     if (isAuthEnabled() && !req.session?.authenticated) return res.status(401).json({ error: 'Unauthorised' });
     if (!mfaStore.isConfigured()) return res.status(400).json({ error: '2FA is not set up' });
     const { code } = req.body || {};
@@ -175,9 +212,10 @@ router.post('/api/auth/2fa/verify', (req, res) => {
 });
 
 // Disable 2FA
-router.post('/api/auth/2fa/disable', (req, res) => {
+router.post('/api/auth/2fa/disable', totpLimiter, (req, res) => {
     if (isAuthEnabled() && !req.session?.authenticated) return res.status(401).json({ error: 'Unauthorised' });
     try {
+        if (!checkCurrentCode(req, res)) return;
         mfaStore.setEnabled(false);
         res.json({ ok: true });
     } catch (err) {
@@ -187,11 +225,14 @@ router.post('/api/auth/2fa/disable', (req, res) => {
 });
 
 // Reset 2FA — deletes mfa.json so a new secret is generated on next access.
-// Accessible when authenticated, or when auth is disabled (recovery mode).
-router.post('/api/auth/2fa/reset', (req, res) => {
+// Needs a current code when authenticated. A lost authenticator is recovered by running
+// with AUTH_ENABLED=false, which skips the code.
+router.post('/api/auth/2fa/reset', totpLimiter, (req, res) => {
     if (isAuthEnabled() && !req.session?.authenticated) return res.status(401).json({ error: 'Unauthorised' });
     try {
+        if (!checkCurrentCode(req, res)) return;
         mfaStore.resetSecret();
+        lastUsedCounter = -1;
         res.json({ ok: true });
     } catch (err) {
         logger.error('2FA reset error:', err.message);

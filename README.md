@@ -62,12 +62,13 @@ Then open `http://localhost:3544` in your browser and add your first registry.
 | `AUTH_ENABLED` | No | `true` | Set to `false` to disable the login screen entirely |
 | `UI_USERNAME` | If auth on | `admin` | Username for the login screen |
 | `UI_PASSWORD` | If auth on | — | Password for the login screen. **Server will not start without this set when auth is enabled.** |
-| `SESSION_SECRET` | Yes | — | Long random string used to sign session cookies |
+| `SESSION_SECRET` | Yes | — | Long random string used to sign session cookies. If unset, a random secret is generated at startup and logins are lost on every restart |
+| `TRUST_PROXY` | Behind a proxy | `0` | Number of reverse proxies in front of the app. Set to `1` behind nginx or similar, so the login rate limit sees real client IPs and session cookies are marked `Secure`. Leave at `0` if clients connect directly, because a trusted `X-Forwarded-For` header can be spoofed |
 
 
 Two-factor authentication is optional and managed from the **Security** page once logged in. When you click **Set up 2FA**, a TOTP secret is generated and stored encrypted in `mfa.json` in your data volume. Scan the QR code with your authenticator app (Google Authenticator, Authy, 1Password, etc.), verify a code to confirm, and 2FA is automatically enabled.
 
-To disable or reset 2FA, use the buttons on the Security page — no server restart or env var changes needed. If you lose access to your authenticator app, click **Reset secret** on the Security page to generate a fresh QR code to re-scan.
+To disable or reset 2FA, use the buttons on the Security page and enter a current code from your authenticator app. Each code works once, so wait for the next code if you have just used one to log in. If you lose access to your authenticator app, restart the container with `AUTH_ENABLED=false`, click **Reset secret** on the Security page, and turn auth back on.
 
 ### Security
 
@@ -85,7 +86,7 @@ To disable or reset 2FA, use the buttons on the Security page — no server rest
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `DATA_DIR` | No | `/app/data` | Directory to store registry configuration (registries.json) |
+| `DATA_DIR` | No | `/app/data` | Directory to store registry configuration (registries.json), 2FA settings (mfa.json) and login sessions (sessions.json) |
 | `LOG_DIR` | No | `/app/logs` | Directory to write daily log files |
 | `LOG_LEVEL` | No | `info` | Log verbosity: `error`, `warn`, `info`, `debug` |
 
@@ -170,10 +171,10 @@ volumes:
 
 ## Notes
 
-- **Reverse proxy** — if running behind Nginx or another reverse proxy, ensure `NODE_ENV=production` is set. RegistryView sets `trust proxy` automatically, so rate limiting and secure cookies work correctly with `X-Forwarded-For` headers.
+- **Reverse proxy** — if running behind Nginx or another reverse proxy, ensure `NODE_ENV=production` and `TRUST_PROXY=1` are set, so rate limiting and secure cookies work correctly with `X-Forwarded-For` headers. Don't publish the app's port directly while `TRUST_PROXY` is set, because anyone reaching it can spoof that header.
 - **Rate limiting** — login attempts are rate-limited to 5 per 15 minutes per IP.
 - **Registry v3** — RegistryView works with both `registry:2` and `registry:3`. The HTTP API is unchanged (`/v2/`). If running `registry:3`, note the garbage collection config path changed to `/etc/distribution/config.yml` (see the Maintenance section in the RegistryView About page for commands).
-- **Registry URL format** — enter hostnames only, without scheme: `docker.example.com` or `localhost:5000`. RegistryView will use `https://` for remote hosts and `http://` for localhost/IP addresses automatically.
+- **Registry URL format** — enter hostnames only, without scheme: `docker.example.com` or `localhost:5000`. RegistryView will use `http://` for localhost and private IP addresses, and `https://` for everything else.
 - **Deleting images** — deletion requires the registry to have `REGISTRY_STORAGE_DELETE_ENABLED=true` set. This is off by default in the official Docker Registry image.
 - **Empty repositories** — Docker Registry v2 has no API to remove repository entries from the catalog. Repos with 0 tags will remain listed until removed from the registry's storage backend directly.
 
